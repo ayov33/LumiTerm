@@ -98,6 +98,12 @@ class TerminalViewController: NSViewController {
         webView.evaluateJavaScript("termManager.createTab();", completionHandler: nil)
     }
 
+    /// Switch to tab by index (0-based)
+    func switchToTab(index: Int) {
+        guard htmlReady else { return }
+        webView.evaluateJavaScript("termManager.switchToIndex(\(index));", completionHandler: nil)
+    }
+
     /// Close active tab via JS. Returns tab count via callback.
     var onLastTabClosed: (() -> Void)?
 
@@ -167,10 +173,25 @@ class TerminalViewController: NSViewController {
             pty.onData = { [weak self] data in
                 self?.handlePTYOutput(tabId: tabId, data: data)
             }
+            var restartCount = 0
+            var lastRestartTime: Date = .distantPast
             pty.onExit = { [weak self] code in
-                // Restart shell on exit
-                DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
-                    self?.ptys[tabId]?.start()
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                    guard let self = self, self.ptys[tabId] != nil else { return }
+                    let now = Date()
+                    // Reset counter if last restart was > 10s ago (normal exit)
+                    if now.timeIntervalSince(lastRestartTime) > 10 {
+                        restartCount = 0
+                    }
+                    restartCount += 1
+                    lastRestartTime = now
+                    if restartCount <= 3 {
+                        self.ptys[tabId]?.start()
+                    } else {
+                        // Shell keeps crashing — show error instead of infinite loop
+                        let msg = "\r\n\u{1b}[31m[LumiTerm] Shell exited repeatedly (code \(code)). Check your shell config.\u{1b}[0m\r\n"
+                        self.handlePTYOutput(tabId: tabId, data: msg.data(using: .utf8) ?? Data())
+                    }
                 }
             }
             ptys[tabId] = pty

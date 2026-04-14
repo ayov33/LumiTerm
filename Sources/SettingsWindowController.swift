@@ -5,7 +5,7 @@ import ServiceManagement
 
 class SettingsWindowController: NSWindowController {
 
-    private let bgColor = NSColor(red: 0.965, green: 0.965, blue: 0.965, alpha: 1.0)
+    private let bgColor = Theme.bgSettings
     private let cardColor = NSColor.white
     private let cardRadius: CGFloat = 8
     private let sidePad: CGFloat = 24
@@ -32,7 +32,7 @@ class SettingsWindowController: NSWindowController {
         window.title = "LumiTerm"
         window.titlebarAppearsTransparent = true
         window.titleVisibility = .hidden
-        window.backgroundColor = NSColor(red: 0.965, green: 0.965, blue: 0.965, alpha: 1.0)
+        window.backgroundColor = Theme.bgSettings
         window.center()
         window.isReleasedWhenClosed = false
         self.init(window: window)
@@ -105,8 +105,11 @@ class SettingsWindowController: NSWindowController {
         y = addCard("Launch at Login", control: s1, w: w, y: y)
         y -= rowGap
 
-        let s2 = CustomSwitch(isOn: true)
-        s2.onToggle = { _ in }
+        let hotkeyEnabled = !UserDefaults.standard.bool(forKey: "hotkeyDisabled")
+        let s2 = CustomSwitch(isOn: hotkeyEnabled)
+        s2.onToggle = { on in
+            UserDefaults.standard.set(!on, forKey: "hotkeyDisabled")
+        }
         y = addCard("Global Hotkey", control: s2, w: w, y: y)
         y -= rowGap
 
@@ -124,7 +127,7 @@ class SettingsWindowController: NSWindowController {
         dd.onChange = { idx in
             let m = idx == 1 ? "pet" : "aurora"
             UserDefaults.standard.set(m, forKey: "capsuleMode")
-            NotificationCenter.default.post(name: .init("CapsuleModeChanged"), object: nil, userInfo: ["mode": m])
+            NotificationCenter.default.post(name: .capsuleModeChanged, object: nil, userInfo: ["mode": m])
         }
         y = addCard("Capsule Style", control: dd, w: w, y: y)
         y -= rowGap
@@ -133,7 +136,7 @@ class SettingsWindowController: NSWindowController {
         let sl = CustomSlider(value: Double(op == 0 ? 0.6 : op), min: 0.3, max: 1.0)
         sl.onChange = { v in
             UserDefaults.standard.set(Float(v), forKey: "panelOpacity")
-            NotificationCenter.default.post(name: .init("SettingsChanged"), object: nil)
+            NotificationCenter.default.post(name: .settingsChanged, object: nil)
         }
         y = addCard("Panel Opacity", control: sl, w: w, y: y)
         y -= rowGap
@@ -174,14 +177,31 @@ class SettingsWindowController: NSWindowController {
         y -= logoSize + 16
 
         let keys = ["App Name", "Version", "Tagline", "GitHub", "Author"]
-        let vals = ["LumiTerm", "v1.0.0", "A lightweight floating terminal", "—", "Ayo"]
+        let vals = ["LumiTerm", "v1.4.0", "A lightweight floating terminal", "ayov33/LumiTerm", "Ayo"]
+        let ghURL = "https://github.com/ayov33/LumiTerm"
         for i in 0..<keys.count {
             let k = makeLabel(keys[i], font: labelFont)
             k.frame = NSRect(x: 0, y: y - lineH, width: labelW, height: lineH)
             sectionContainer.addSubview(k)
-            let v = makeLabel(vals[i], font: labelFontItalic)
-            v.frame = NSRect(x: labelW, y: y - lineH, width: w - labelW, height: lineH)
-            sectionContainer.addSubview(v)
+            if keys[i] == "GitHub" {
+                let link = NSTextField(labelWithAttributedString: NSAttributedString(
+                    string: vals[i],
+                    attributes: [
+                        .font: labelFontItalic,
+                        .foregroundColor: NSColor.linkColor,
+                        .underlineStyle: NSUnderlineStyle.single.rawValue,
+                        .link: URL(string: ghURL)!
+                    ]
+                ))
+                link.frame = NSRect(x: labelW, y: y - lineH, width: w - labelW, height: lineH)
+                link.allowsEditingTextAttributes = true
+                link.isSelectable = true
+                sectionContainer.addSubview(link)
+            } else {
+                let v = makeLabel(vals[i], font: labelFontItalic)
+                v.frame = NSRect(x: labelW, y: y - lineH, width: w - labelW, height: lineH)
+                sectionContainer.addSubview(v)
+            }
             y -= lineH
         }
     }
@@ -232,7 +252,7 @@ class SettingsWindowController: NSWindowController {
             btn.onTap = { tag in
                 let edge = edges[tag]
                 UserDefaults.standard.set(edge, forKey: "dockEdge")
-                NotificationCenter.default.post(name: .init("DockEdgeChanged"), object: nil, userInfo: ["edge": edge])
+                NotificationCenter.default.post(name: .dockEdgeChanged, object: nil, userInfo: ["edge": edge])
                 for case let b as CustomDockButton in container.subviews {
                     b.isSelected = (edges[b.buttonTag] == edge)
                     b.needsDisplay = true
@@ -252,7 +272,7 @@ class SettingsWindowController: NSWindowController {
         stepper.onChange = { [weak lbl] val in
             UserDefaults.standard.set(val, forKey: "fontSize")
             lbl?.stringValue = "\(val) px"
-            NotificationCenter.default.post(name: .init("SettingsChanged"), object: nil)
+            NotificationCenter.default.post(name: .settingsChanged, object: nil)
         }
 
         let w = lbl.frame.width + 9 + stepper.frame.width

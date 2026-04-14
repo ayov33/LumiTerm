@@ -36,7 +36,14 @@ class PTY {
         var master: Int32 = 0
         let childPid = forkpty(&master, nil, nil, &size)
 
-        if childPid < 0 { return }
+        if childPid < 0 {
+            let msg = "[LumiTerm] Failed to create terminal process (forkpty error).\n"
+            callbackQueue.async { [weak self] in
+                self?.onData?(msg.data(using: .utf8) ?? Data())
+                self?.onExit?(-1)
+            }
+            return
+        }
 
         if childPid == 0 {
             // Child process
@@ -44,7 +51,7 @@ class PTY {
             let cEnv = env.map { strdup($0) } + [nil]
             var mArgs = cArgs
             var mEnv = cEnv
-            execve(strdup(shell), &mArgs, &mEnv)
+            execve(shell, &mArgs, &mEnv)
             _exit(127)
         }
 
@@ -106,7 +113,8 @@ class PTY {
                 let bytes = Data(data)
                 self.callbackQueue.async { self.onData?(bytes) }
             }
-            if self.running { self.scheduleRead() }
+            if done || !self.running { return }
+            self.scheduleRead()
         }
     }
 

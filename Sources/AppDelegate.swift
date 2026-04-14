@@ -92,7 +92,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         transitionOverlay = NSView(frame: panel.contentView!.bounds)
         transitionOverlay.autoresizingMask = [.width, .height]
         transitionOverlay.wantsLayer = true
-        transitionOverlay.layer?.backgroundColor = NSColor(red: 0.078, green: 0.078, blue: 0.086, alpha: 1.0).cgColor
+        transitionOverlay.layer?.backgroundColor = Theme.bgPanelSolid.cgColor
         transitionOverlay.isHidden = true
         panel.contentView?.addSubview(transitionOverlay)
 
@@ -124,14 +124,14 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         if savedMode == "pet" {
             statusBar.setMode("pet")
         }
-        NotificationCenter.default.addObserver(forName: .init("CapsuleModeChanged"), object: nil, queue: .main) { [weak self] notif in
+        NotificationCenter.default.addObserver(forName: .capsuleModeChanged, object: nil, queue: .main) { [weak self] notif in
             if let mode = notif.userInfo?["mode"] as? String {
                 self?.statusBar.setMode(mode)
             }
         }
 
         // Dock edge change from Settings
-        NotificationCenter.default.addObserver(forName: .init("DockEdgeChanged"), object: nil, queue: .main) { [weak self] notif in
+        NotificationCenter.default.addObserver(forName: .dockEdgeChanged, object: nil, queue: .main) { [weak self] notif in
             guard let self = self, let edgeStr = notif.userInfo?["edge"] as? String,
                   let edge = DockEdge(rawValue: edgeStr) else { return }
             self.stateManager.dockEdge = edge
@@ -142,7 +142,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }
 
         // Settings changes (opacity, font size)
-        NotificationCenter.default.addObserver(forName: .init("SettingsChanged"), object: nil, queue: .main) { [weak self] _ in
+        NotificationCenter.default.addObserver(forName: .settingsChanged, object: nil, queue: .main) { [weak self] _ in
             self?.applySettings()
         }
 
@@ -326,12 +326,18 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             terminalVC.closeActiveTab()
             return true
         }
+        // Cmd+1~5: switch to tab by index
+        if flags == .command, let n = Int(chars), n >= 1 && n <= 5 {
+            terminalVC.switchToTab(index: n - 1)
+            return true
+        }
         return false
     }
 
     private var lastFlagsEventTime: Date = .distantPast
 
     private func handleFlagsChanged(_ event: NSEvent) {
+        guard !UserDefaults.standard.bool(forKey: "hotkeyDisabled") else { return }
         guard event.keyCode == 61 else { return }
         guard event.modifierFlags.contains(.option) else { return }
         let now = Date()
