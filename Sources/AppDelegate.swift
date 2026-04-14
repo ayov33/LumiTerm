@@ -177,7 +177,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                 container.autoresizingMask = [.width, .height]
                 container.alphaValue = 1.0
                 container.isHidden = false
-                // Instant swap — no fade, no flash
                 self.transitionOverlay.isHidden = true
                 self.panel.makeKey()
                 self.terminalVC.focusTerminal()

@@ -467,6 +467,13 @@
       }
     },
 
+    fitAll: function() {
+      for (var i = 0; i < tabOrder.length; i++) {
+        var t = tabs[tabOrder[i]];
+        if (t && t.fit) { try { t.fit.fit(); } catch(e) {} }
+      }
+    },
+
     // Called by Swift on first expand
     ready: function() {
       if (tabOrder.length === 0) {
