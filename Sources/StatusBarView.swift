@@ -76,10 +76,6 @@ class StatusBarView: NSView {
         webView.evaluateJavaScript("window.auroraBridge.setOrientation('\(orient)');", completionHandler: nil)
     }
 
-    func updateMultiTabStatus(tabCount: Int, statuses: [TerminalStatus]) {
-        updateStatus(statuses.contains(.running) ? .running : .idle)
-    }
-
     func flashDone() {
         guard htmlLoaded else { return }
         webView.evaluateJavaScript("window.auroraBridge.flashDone();", completionHandler: nil)

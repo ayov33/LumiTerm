@@ -2,12 +2,12 @@
 import PackageDescription
 
 let package = Package(
-    name: "AICompanion",
+    name: "LumiTerm",
     platforms: [.macOS(.v13)],
     dependencies: [],
     targets: [
         .executableTarget(
-            name: "AICompanion",
+            name: "LumiTerm",
             dependencies: [],
             path: "Sources",
             resources: [

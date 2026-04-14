@@ -114,12 +114,6 @@ class TerminalViewController: NSViewController {
         }
     }
 
-    /// Switch to tab by index (0-based)
-    func switchToTabByIndex(_ index: Int) {
-        guard htmlReady else { return }
-        webView.evaluateJavaScript("termManager.switchToIndex(\(index));", completionHandler: nil)
-    }
-
     func cleanup() {
         for (_, pty) in ptys {
             pty.terminate()

@@ -83,10 +83,6 @@ class PTY {
         }
     }
 
-    func write(_ string: String) {
-        if let data = string.data(using: .utf8) { write(data) }
-    }
-
     func resize(cols: UInt16, rows: UInt16) {
         guard masterFd >= 0 else { return }
         var size = winsize(ws_row: rows, ws_col: cols, ws_xpixel: 0, ws_ypixel: 0)
