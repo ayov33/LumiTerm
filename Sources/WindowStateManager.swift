@@ -66,35 +66,15 @@ class WindowStateManager {
         onWillExpand?()
 
         let target = expandedFrame()
-        let start = panel.frame
-        let duration = 0.22
-        let startTime = CACurrentMediaTime()
 
-        // Manual frame interpolation with DispatchSource for smoother animation
-        let timer = DispatchSource.makeTimerSource(queue: .main)
-        timer.schedule(deadline: .now(), repeating: .milliseconds(8))  // ~120fps
-        timer.setEventHandler { [weak self] in
-            guard let self = self else { timer.cancel(); return }
-            let elapsed = CACurrentMediaTime() - startTime
-            let progress = min(elapsed / duration, 1.0)
-
-            // Ease-out cubic
-            let t = 1.0 - pow(1.0 - progress, 3.0)
-
-            let x = start.origin.x + (target.origin.x - start.origin.x) * t
-            let y = start.origin.y + (target.origin.y - start.origin.y) * t
-            let w = start.width + (target.width - start.width) * t
-            let h = start.height + (target.height - start.height) * t
-
-            self.panel.setFrame(NSRect(x: x, y: y, width: w, height: h), display: true)
-
-            if progress >= 1.0 {
-                timer.cancel()
-                self.isAnimating = false
-                self.onStateChanged?(.expanded)
-            }
-        }
-        timer.resume()
+        NSAnimationContext.runAnimationGroup({ ctx in
+            ctx.duration = 0.22
+            ctx.timingFunction = CAMediaTimingFunction(name: .easeOut)
+            self.panel.animator().setFrame(target, display: true)
+        }, completionHandler: { [weak self] in
+            self?.isAnimating = false
+            self?.onStateChanged?(.expanded)
+        })
     }
 
     // MARK: - Collapse: window smoothly shrinks from panel to strip
@@ -107,34 +87,15 @@ class WindowStateManager {
         onWillCollapse?()
 
         let target = collapsedFrame()
-        let start = panel.frame
-        let duration = 0.18
-        let startTime = CACurrentMediaTime()
 
-        let timer = DispatchSource.makeTimerSource(queue: .main)
-        timer.schedule(deadline: .now(), repeating: .milliseconds(8))
-        timer.setEventHandler { [weak self] in
-            guard let self = self else { timer.cancel(); return }
-            let elapsed = CACurrentMediaTime() - startTime
-            let progress = min(elapsed / duration, 1.0)
-
-            // Ease-in cubic
-            let t = progress * progress * progress
-
-            let x = start.origin.x + (target.origin.x - start.origin.x) * t
-            let y = start.origin.y + (target.origin.y - start.origin.y) * t
-            let w = start.width + (target.width - start.width) * t
-            let h = start.height + (target.height - start.height) * t
-
-            self.panel.setFrame(NSRect(x: x, y: y, width: w, height: h), display: true)
-
-            if progress >= 1.0 {
-                timer.cancel()
-                self.isAnimating = false
-                self.onStateChanged?(.collapsed)
-            }
-        }
-        timer.resume()
+        NSAnimationContext.runAnimationGroup({ ctx in
+            ctx.duration = 0.18
+            ctx.timingFunction = CAMediaTimingFunction(name: .easeIn)
+            self.panel.animator().setFrame(target, display: true)
+        }, completionHandler: { [weak self] in
+            self?.isAnimating = false
+            self?.onStateChanged?(.collapsed)
+        })
     }
 
     func toggle() {

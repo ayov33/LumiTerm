@@ -29,7 +29,7 @@ A lightweight floating terminal for macOS that stays out of your way until you n
 ## Requirements
 
 - macOS 13 (Ventura) or later
-- Swift 5.9+
+- Apple Silicon or Intel Mac (universal binary)
 
 ## Install
 

@@ -85,13 +85,6 @@ class TerminalViewController: NSViewController {
         guard htmlReady else { return }
         webView.evaluateJavaScript("termManager.setFontSize(\(size));", completionHandler: nil)
     }
-
-    /// Refit all terminal instances to current container size
-    func fitTerminal() {
-        guard htmlReady else { return }
-        webView.evaluateJavaScript("termManager.fitAll();", completionHandler: nil)
-    }
-
     /// Change terminal background opacity
     func setBackgroundOpacity(_ opacity: Float) {
         guard htmlReady else { return }

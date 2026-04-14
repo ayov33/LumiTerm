@@ -17,7 +17,7 @@ class ScreenEdgeMonitor {
     private let edgeThreshold: CGFloat = 5
     private let hoverDelay: TimeInterval = 0.6
     private let leaveDelay: TimeInterval = 0.15
-    private let pollInterval: TimeInterval = 0.2
+    private let pollInterval: TimeInterval = 1.0  // fallback only; event monitors are primary
 
     func start() {
         // Event-based detection (responsive when mouse is moving)
@@ -56,16 +56,6 @@ class ScreenEdgeMonitor {
         if isPaused { return }
         let mouse = NSEvent.mouseLocation
         let state = stateProvider?() ?? .collapsed
-
-        // Only need poll timer in collapsed state; pause it in expanded
-        if state == .expanded && pollTimer != nil {
-            pollTimer?.invalidate()
-            pollTimer = nil
-        } else if state == .collapsed && pollTimer == nil {
-            pollTimer = Timer.scheduledTimer(withTimeInterval: pollInterval, repeats: true) { [weak self] _ in
-                self?.checkMouse()
-            }
-        }
 
         if state == .collapsed {
             let visibleRect = panelFrameProvider?() ?? .zero
