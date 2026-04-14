@@ -70,6 +70,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         outputMonitor.onCommandFinished = { [weak self] in
             DispatchQueue.main.async {
                 self?.statusBar.flashDone()
+                // Play sound when collapsed and sound enabled
+                if self?.stateManager.state == .collapsed,
+                   !UserDefaults.standard.bool(forKey: "soundDisabled") {
+                    NSSound(named: "Tink")?.play()
+                }
             }
         }
         terminalVC.onBell = { [weak self] in
