@@ -354,6 +354,9 @@
       term.onResize(function(size) {
         postToSwift('resize', { tabId: id, cols: size.cols, rows: size.rows });
       });
+      term.onBell(function() {
+        postToSwift('bell', { tabId: id });
+      });
 
       tabs[id] = { id: id, term: term, fitAddon: fitAddon, containerEl: container, customTitle: null };
       tabOrder.push(id);

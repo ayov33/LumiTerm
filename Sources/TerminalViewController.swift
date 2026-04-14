@@ -8,6 +8,7 @@ class TerminalViewController: NSViewController {
     private var flushScheduled: Set<String> = []
 
     var onOutput: ((Int) -> Void)?
+    var onBell: (() -> Void)?
 
     private var htmlReady = false
     private var started = false
@@ -194,6 +195,9 @@ class TerminalViewController: NSViewController {
                let rows = dict["rows"] as? Int {
                 ptys[tabId]?.resize(cols: UInt16(cols), rows: UInt16(rows))
             }
+
+        case "bell":
+            onBell?()
 
         default: break
         }

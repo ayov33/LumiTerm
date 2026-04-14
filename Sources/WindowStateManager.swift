@@ -31,6 +31,12 @@ class WindowStateManager {
 
     private var isAnimating = false
 
+    // Get screen where mouse is currently located
+    private var currentScreen: NSScreen {
+        let mouseLocation = NSEvent.mouseLocation
+        return NSScreen.screens.first(where: { $0.frame.contains(mouseLocation) }) ?? panel.screen ?? NSScreen.main ?? NSScreen.screens[0]
+    }
+
     init(panel: FloatingPanel) {
         self.panel = panel
         if let saved = UserDefaults.standard.string(forKey: "dockEdge"),
@@ -40,8 +46,7 @@ class WindowStateManager {
     }
 
     private func panelHeight() -> CGFloat {
-        guard let screen = NSScreen.main else { return 500 }
-        return screen.visibleFrame.height * sideHeightRatio
+        return currentScreen.visibleFrame.height * sideHeightRatio
     }
 
     func setupInitial() {
@@ -159,8 +164,7 @@ class WindowStateManager {
     // MARK: - Frames
 
     func collapsedFrame() -> NSRect {
-        guard let screen = NSScreen.main else { return .zero }
-        let sf = screen.visibleFrame
+        let sf = currentScreen.visibleFrame
         switch dockEdge {
         case .right:
             return NSRect(x: sf.maxX - stripW, y: sf.midY - stripH/2, width: stripW, height: stripH)
@@ -174,8 +178,7 @@ class WindowStateManager {
     }
 
     func expandedFrame() -> NSRect {
-        guard let screen = NSScreen.main else { return .zero }
-        let sf = screen.visibleFrame
+        let sf = currentScreen.visibleFrame
 
         switch dockEdge {
         case .right:

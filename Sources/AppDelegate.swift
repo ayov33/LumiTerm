@@ -72,6 +72,13 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                 self?.statusBar.flashDone()
             }
         }
+        terminalVC.onBell = { [weak self] in
+            DispatchQueue.main.async {
+                if self?.stateManager.state == .collapsed {
+                    self?.statusBar.flashDone()
+                }
+            }
+        }
 
         // Detect Claude Code version
         detectClaudeVersion()
@@ -220,12 +227,22 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         setupEditMenu()
 
         // 11. Initial state
-        panel.alphaValue = 1.0  // Reset in case previously changed
+        panel.alphaValue = 1.0
         stateManager.setupInitial()
         applySettings()
+
+        // Restore previous state if app was expanded+pinned when quit
+        if UserDefaults.standard.bool(forKey: "wasExpanded") && UserDefaults.standard.bool(forKey: "wasPinned") {
+            isPinned = true
+            stateManager.expand()
+        }
     }
 
     func applicationWillTerminate(_ notification: Notification) {
+        // Save state for restoration
+        UserDefaults.standard.set(stateManager.state == .expanded, forKey: "wasExpanded")
+        UserDefaults.standard.set(isPinned, forKey: "wasPinned")
+
         edgeMonitor.stop()
         terminalVC.cleanup()
         if let monitor = globalHotkeyMonitor { NSEvent.removeMonitor(monitor) }
