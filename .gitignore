@@ -4,4 +4,9 @@ dist/
 *.o
 *.d
 *.dia
-*.html
+# Top-level demo/research HTML files (not app resources)
+/app-screenshots-showcase.html
+/capsule-glow-final.html
+/gradient-border-research.html
+/thinking-animation-demo.html
+/thinking-animation-demo-v3.html

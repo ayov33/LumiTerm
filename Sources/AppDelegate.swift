@@ -175,7 +175,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                 let container = self.terminalContainerView!
                 container.frame = self.panel.contentView!.bounds
                 container.autoresizingMask = [.width, .height]
-                container.alphaValue = 1.0
                 container.isHidden = false
                 self.transitionOverlay.isHidden = true
                 self.panel.makeKey()

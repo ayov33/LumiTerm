@@ -24,7 +24,7 @@ class StatusBarView: NSView {
         wantsLayer = true
         layer?.cornerRadius = 15
         layer?.masksToBounds = true
-        layer?.backgroundColor = NSColor(red: 0.05, green: 0.05, blue: 0.08, alpha: 0.9).cgColor
+        layer?.backgroundColor = Theme.bgPanelSolid.withAlphaComponent(0.9).cgColor
 
         // WKWebView for Aurora CSS animation
         let config = WKWebViewConfiguration()

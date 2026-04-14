@@ -470,7 +470,7 @@
     fitAll: function() {
       for (var i = 0; i < tabOrder.length; i++) {
         var t = tabs[tabOrder[i]];
-        if (t && t.fit) { try { t.fit.fit(); } catch(e) {} }
+        if (t && t.fitAddon) { try { t.fitAddon.fit(); } catch(e) {} }
       }
     },
 

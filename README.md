@@ -90,6 +90,15 @@ Sources/
     └── sprites/               # Pixel pet SVGs
 ```
 
+## Dependencies
+
+| Dependency | Version | License |
+|------------|---------|---------|
+| [xterm.js](https://xtermjs.org) | ~5.x (bundled) | MIT |
+| xterm-addon-fit | ~0.8.x (bundled) | MIT |
+
+Zero Swift package dependencies. Terminal rendering via xterm.js in WKWebView.
+
 ## License
 
 [MIT](LICENSE)
