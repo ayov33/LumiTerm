@@ -9,7 +9,8 @@ A lightweight floating terminal for macOS that stays out of your way until you n
 <p align="center">
   <img src="assets/screenshot-expanded.png" width="600" alt="LumiTerm expanded terminal">
   <br>
-  <img src="assets/screenshot-capsule.png" width="600" alt="LumiTerm collapsed capsule on desktop">
+  <img src="assets/screenshot-collapsed-1.png" width="290" alt="LumiTerm collapsed state">
+  <img src="assets/screenshot-collapsed-2.png" width="290" alt="LumiTerm capsule on desktop">
 </p>
 
 ---
@@ -21,7 +22,7 @@ A lightweight floating terminal for macOS that stays out of your way until you n
 - **Collapsed status bar** — see terminal state (Running / Idle / Done) at a glance, even when collapsed
 - **Ripple notification** — a subtle glow animation when your command finishes, no disruptive system alerts
 - **Multi-tab** — up to 3 terminal tabs with rename support (double-click to rename)
-- **Global hotkey** — `Cmd + Shift + A` to toggle from anywhere
+- **Global hotkey** — double-tap `Right Option` to toggle from anywhere (pinned mode)
 - **Native performance** — built with Swift + AppKit, terminal powered by xterm.js via WKWebView
 - **Transparent & minimal** — semi-transparent panel with aurora/pixel-pet animations in collapsed mode
 
@@ -53,7 +54,7 @@ swift run
 1. LumiTerm runs as a **menu bar app** (no Dock icon)
 2. A thin capsule appears on your screen edge — hover over it to expand the terminal
 3. Move your cursor away to collapse it back
-4. Press `Cmd + Shift + A` to toggle the terminal from anywhere
+4. Double-tap `Right Option` to toggle and pin the terminal
 5. Click the menu bar icon for quick access to Settings and Toggle
 
 ### Settings
@@ -107,7 +108,7 @@ Sources/
 - **折叠状态栏** — 收起时仍可看到终端状态（运行中/空闲/完成）
 - **涟漪通知** — 命令完成时以柔和光晕动画提醒，不打断工作流
 - **多标签页** — 最多 3 个终端标签，双击可重命名
-- **全局热键** — `Cmd + Shift + A` 随时唤出
+- **全局热键** — 双击右侧 `Option` 键随时唤出并固定
 - **原生性能** — Swift + AppKit 构建，xterm.js 渲染终端
 
 ### 目标用户
