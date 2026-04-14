@@ -154,8 +154,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             self.statusBar.isHidden = true
             self.terminalContainerView.isHidden = true
             self.terminalContainerView.autoresizingMask = []
-            self.transitionOverlay.isHidden = false
+            // Show semi-transparent bg during expand animation (matches terminal bg)
+            self.transitionOverlay.layer?.backgroundColor = Theme.bgPanel.cgColor
             self.transitionOverlay.layer?.opacity = 1.0
+            self.transitionOverlay.isHidden = false
         }
         stateManager.onWillCollapse = { [weak self] in
             guard let self = self else { return }
@@ -173,11 +175,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                 let container = self.terminalContainerView!
                 container.frame = self.panel.contentView!.bounds
                 container.autoresizingMask = [.width, .height]
+                container.alphaValue = 1.0
                 container.isHidden = false
-
-                // Instantly remove overlay — no fade delay
+                // Instant swap — no fade, no flash
                 self.transitionOverlay.isHidden = true
-
                 self.panel.makeKey()
                 self.terminalVC.focusTerminal()
                 self.outputMonitor.isPaused = false
