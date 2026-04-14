@@ -288,7 +288,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     // MARK: - Apply Settings
 
     private func applySettings() {
-        // Panel background opacity — change terminal background, not window alpha
+        // Panel background opacity — controlled via HTML body background only
         let opacity = UserDefaults.standard.float(forKey: "panelOpacity")
         if opacity > 0 {
             terminalVC.setBackgroundOpacity(opacity)
@@ -329,20 +329,26 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         return false
     }
 
+    private var lastFlagsEventTime: Date = .distantPast
+
     private func handleFlagsChanged(_ event: NSEvent) {
         guard event.keyCode == 61 else { return }
         guard event.modifierFlags.contains(.option) else { return }
         let now = Date()
+
+        // Deduplicate: global + local monitors can both fire for the same event
+        let sinceLast = now.timeIntervalSince(lastFlagsEventTime)
+        lastFlagsEventTime = now
+        guard sinceLast > 0.05 else { return }
+
         let elapsed = now.timeIntervalSince(lastRightOptionTime)
         lastRightOptionTime = now
-        if elapsed < 0.4 {
+        if elapsed > 0.1 && elapsed < 0.4 {
             lastRightOptionTime = .distantPast
             if stateManager.state == .collapsed {
-                // Expand in pinned mode
                 isPinned = true
                 stateManager.expand()
             } else {
-                // Collapse and unpin
                 isPinned = false
                 stateManager.collapse()
             }
@@ -354,7 +360,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     private func setupStatusItem() {
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
         if let button = statusItem.button {
-            button.image = NSImage(systemSymbolName: "terminal", accessibilityDescription: "LumiTerm")
+            button.image = makeLumiMenuBarIcon()
         }
         let menu = NSMenu()
         menu.addItem(NSMenuItem(title: "Toggle Panel", action: #selector(togglePanel), keyEquivalent: ""))
@@ -393,5 +399,48 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         let edge = stateManager.dockEdge
         let orient = (edge == .top || edge == .bottom) ? "horizontal" : "vertical"
         statusBar.setOrientation(orient)
+    }
+
+    // MARK: - Logo
+
+    /// Draw the L-shaped gradient logo for the menu bar (18×18 template image)
+    private func makeLumiMenuBarIcon() -> NSImage {
+        let size = NSSize(width: 18, height: 18)
+        let img = NSImage(size: size, flipped: true) { rect in
+            // L shape scaled to 18×18 (original 96×96 → scale ≈ 0.1875)
+            // Vertical bar: 17×47 at (24,24) → ~3.2×8.8 at (4.5, 4.5)
+            // Horizontal bar: 47×17 at (24,54) → ~8.8×3.2 at (4.5, 10.1)
+            let vBar = NSRect(x: 4.5, y: 4.5, width: 3.2, height: 8.8)
+            let hBar = NSRect(x: 4.5, y: 10.1, width: 8.8, height: 3.2)
+
+            // Vertical bar gradient (top to bottom: black → transparent)
+            if let ctx = NSGraphicsContext.current?.cgContext {
+                let colors = [NSColor.black.cgColor, NSColor.black.withAlphaComponent(0).cgColor]
+                let gradient = CGGradient(colorsSpace: CGColorSpaceCreateDeviceRGB(),
+                                          colors: colors as CFArray, locations: [0, 1])!
+                ctx.saveGState()
+                ctx.clip(to: vBar)
+                ctx.drawLinearGradient(gradient,
+                                       start: CGPoint(x: vBar.midX, y: vBar.minY),
+                                       end: CGPoint(x: vBar.midX, y: vBar.maxY),
+                                       options: [])
+                ctx.restoreGState()
+
+                // Horizontal bar gradient (left to right: transparent → black)
+                ctx.saveGState()
+                ctx.clip(to: hBar)
+                let hColors = [NSColor.black.withAlphaComponent(0).cgColor, NSColor.black.cgColor]
+                let hGradient = CGGradient(colorsSpace: CGColorSpaceCreateDeviceRGB(),
+                                            colors: hColors as CFArray, locations: [0, 1])!
+                ctx.drawLinearGradient(hGradient,
+                                       start: CGPoint(x: hBar.minX, y: hBar.midY),
+                                       end: CGPoint(x: hBar.maxX, y: hBar.midY),
+                                       options: [])
+                ctx.restoreGState()
+            }
+            return true
+        }
+        img.isTemplate = true
+        return img
     }
 }

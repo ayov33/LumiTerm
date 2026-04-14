@@ -21,7 +21,7 @@ class FloatingPanel: NSPanel {
         let container = NSView(frame: NSRect(origin: .zero, size: contentRect.size))
         container.autoresizingMask = [.width, .height]
         container.wantsLayer = true
-        container.layer?.backgroundColor = bgColor.cgColor
+        container.layer?.backgroundColor = NSColor.clear.cgColor
         container.layer?.cornerRadius = cornerRadius
         container.layer?.masksToBounds = true
         container.layer?.borderWidth = 0.5

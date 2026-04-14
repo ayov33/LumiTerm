@@ -11,7 +11,7 @@ class SettingsWindowController: NSWindowController {
     private let sidePad: CGFloat = 24
     private let topPad: CGFloat = 24
     private let rowH: CGFloat = 50
-    private let rowGap: CGFloat = 16
+    private let rowGap: CGFloat = 8
     private let rowPadX: CGFloat = 16
     private let tabGap: CGFloat = 24
     private let tabFont = NSFont(name: "Helvetica-Bold", size: 16) ?? NSFont.boldSystemFont(ofSize: 16)
@@ -121,7 +121,7 @@ class SettingsWindowController: NSWindowController {
 
         let saved = UserDefaults.standard.string(forKey: "capsuleMode") ?? "aurora"
         let dd = CustomDropdown(items: ["Aurora", "Pixel Pet"], selected: saved == "pet" ? 1 : 0)
-        dd.onChange = { [weak self] idx in
+        dd.onChange = { idx in
             let m = idx == 1 ? "pet" : "aurora"
             UserDefaults.standard.set(m, forKey: "capsuleMode")
             NotificationCenter.default.post(name: .init("CapsuleModeChanged"), object: nil, userInfo: ["mode": m])
@@ -163,9 +163,18 @@ class SettingsWindowController: NSWindowController {
         let w = sectionContainer.bounds.width
         let labelW: CGFloat = 120
         let lineH: CGFloat = 32
+        var y = sectionContainer.bounds.height
+
+        // Logo (white bg, rounded corners, L-shape gradient)
+        let logoSize: CGFloat = 64
+        let logoView = LumiLogoView(frame: NSRect(
+            x: (w - logoSize) / 2, y: y - logoSize, width: logoSize, height: logoSize
+        ))
+        sectionContainer.addSubview(logoView)
+        y -= logoSize + 16
+
         let keys = ["App Name", "Version", "Tagline", "GitHub", "Author"]
         let vals = ["LumiTerm", "v1.0.0", "A lightweight floating terminal", "—", "Ayo"]
-        var y = sectionContainer.bounds.height
         for i in 0..<keys.count {
             let k = makeLabel(keys[i], font: labelFont)
             k.frame = NSRect(x: 0, y: y - lineH, width: labelW, height: lineH)
@@ -220,7 +229,7 @@ class SettingsWindowController: NSWindowController {
             btn.symbol = sym
             btn.isSelected = (edges[i] == saved)
             btn.buttonTag = i
-            btn.onTap = { [weak self] tag in
+            btn.onTap = { tag in
                 let edge = edges[tag]
                 UserDefaults.standard.set(edge, forKey: "dockEdge")
                 NotificationCenter.default.post(name: .init("DockEdgeChanged"), object: nil, userInfo: ["edge": edge])
@@ -430,19 +439,23 @@ class CustomSlider: NSView {
         self.value = value
         self.minVal = min
         self.maxVal = max
-        super.init(frame: NSRect(x: 0, y: 0, width: 130, height: 15))
+        super.init(frame: NSRect(x: 0, y: 0, width: 100, height: 20))
     }
     required init?(coder: NSCoder) { fatalError() }
 
+    private let knobSize: CGFloat = 15
+
     private var knobCenterX: CGFloat {
         let ratio = CGFloat((value - minVal) / (maxVal - minVal))
-        return 7.5 + ratio * (bounds.width - 15)
+        let half = knobSize / 2
+        return half + ratio * (bounds.width - knobSize)
     }
 
     override func draw(_ dirtyRect: NSRect) {
         let ctx = NSGraphicsContext.current!.cgContext
+        let midY = bounds.height / 2
         let trackH: CGFloat = 4
-        let trackY = (bounds.height - trackH) / 2
+        let trackY = midY - trackH / 2
         let trackR = trackH / 2
 
         // Full track (gray, rounded)
@@ -463,7 +476,8 @@ class CustomSlider: NSView {
         }
 
         // Knob (white circle with subtle shadow)
-        let knobRect = CGRect(x: knobCenterX - 7.5, y: 0, width: 15, height: 15)
+        let knobY = midY - knobSize / 2
+        let knobRect = CGRect(x: knobCenterX - knobSize / 2, y: knobY, width: knobSize, height: knobSize)
         ctx.setShadow(offset: CGSize(width: 0, height: -1), blur: 2, color: NSColor.black.withAlphaComponent(0.15).cgColor)
         ctx.setFillColor(NSColor.white.cgColor)
         ctx.fillEllipse(in: knobRect)
@@ -531,6 +545,58 @@ class CustomStepper: NSView {
             if value < maxVal { value += 1; onChange?(value) }
         } else {
             if value > minVal { value -= 1; onChange?(value) }
+        }
+    }
+}
+
+// MARK: - Lumi Logo View (white bg + L gradient)
+
+class LumiLogoView: NSView {
+    override func draw(_ dirtyRect: NSRect) {
+        super.draw(dirtyRect)
+        guard let ctx = NSGraphicsContext.current?.cgContext else { return }
+        let s = bounds.size
+        let scale = s.width / 96.0  // design is 96×96
+
+        // White rounded background
+        let bgPath = NSBezierPath(roundedRect: bounds, xRadius: 20 * scale, yRadius: 20 * scale)
+        NSColor.white.setFill()
+        bgPath.fill()
+
+        // Subtle border
+        NSColor(white: 0.85, alpha: 1).setStroke()
+        bgPath.lineWidth = 0.5
+        bgPath.stroke()
+
+        let vRect = CGRect(x: 24 * scale, y: s.height - 24 * scale - 47 * scale,
+                           width: 17 * scale, height: 47 * scale)
+        let hRect = CGRect(x: 24 * scale, y: s.height - 54 * scale - 17 * scale,
+                           width: 47 * scale, height: 17 * scale)
+
+        let cs = CGColorSpaceCreateDeviceRGB()
+
+        // Vertical bar: top→bottom = black→transparent (flipped coords: bottom→top)
+        let vColors = [NSColor.black.cgColor, NSColor.black.withAlphaComponent(0).cgColor]
+        if let g = CGGradient(colorsSpace: cs, colors: vColors as CFArray, locations: [0, 1]) {
+            ctx.saveGState()
+            ctx.clip(to: vRect)
+            ctx.drawLinearGradient(g,
+                                   start: CGPoint(x: vRect.midX, y: vRect.maxY),
+                                   end: CGPoint(x: vRect.midX, y: vRect.minY),
+                                   options: [])
+            ctx.restoreGState()
+        }
+
+        // Horizontal bar: left→right = transparent→black (rotated gradient from Figma)
+        let hColors = [NSColor.black.withAlphaComponent(0).cgColor, NSColor.black.cgColor]
+        if let g = CGGradient(colorsSpace: cs, colors: hColors as CFArray, locations: [0, 1]) {
+            ctx.saveGState()
+            ctx.clip(to: hRect)
+            ctx.drawLinearGradient(g,
+                                   start: CGPoint(x: hRect.minX, y: hRect.midY),
+                                   end: CGPoint(x: hRect.maxX, y: hRect.midY),
+                                   options: [])
+            ctx.restoreGState()
         }
     }
 }
