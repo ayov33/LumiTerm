@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="xterm.css">
+<style>
+  html, body {
+    margin: 0; padding: 0;
+    width: 100%; height: 100%;
+    background: rgba(20, 20, 22, 0.60);
+    overflow: hidden;
+    font-family: -apple-system, sans-serif;
+  }
+
+  /* Tab bar */
+  #tab-bar {
+    height: 31px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 0 8px;
+    border-bottom: 1px solid rgba(255,255,255,0.2);
+    position: relative;
+  }
+  .tab-btn {
+    padding: 0 8px 0 14px;
+    border-radius: 11px;
+    border: none;
+    height: 22px;
+    font-size: 10px;
+    font-family: 'SF Mono', Menlo, monospace;
+    font-weight: 500;
+    cursor: pointer;
+    color: rgba(255,255,255,0.7);
+    background: rgba(255,255,255,0.1);
+    outline: none;
+    min-width: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+    gap: 6px;
+  }
+  .tab-btn.active {
+    color: rgba(255,255,255,0.9);
+    background: rgba(255,255,255,0.2);
+  }
+  .tab-close {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    line-height: 1;
+    color: rgba(255,255,255,0.5);
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+  .tab-close:hover {
+    background: rgba(255,255,255,0.15);
+    color: rgba(255,255,255,0.9);
+  }
+  .tab-btn.active .tab-close {
+    display: flex;
+  }
+  .tab-btn[contenteditable="true"] {
+    cursor: text;
+    outline: none;
+    min-width: 40px;
+  }
+  #rename-input {
+    position: absolute;
+    height: 22px;
+    border-radius: 11px;
+    border: none;
+    background: rgba(255,255,255,0.2);
+    color: rgba(255,255,255,0.95);
+    font-size: 10px;
+    font-family: 'SF Mono', Menlo, monospace;
+    font-weight: 500;
+    text-align: center;
+    padding: 0 8px;
+    outline: none;
+    display: none;
+    z-index: 10;
+    box-sizing: border-box;
+  }
+  #add-btn {
+    padding: 0 12px;
+    border-radius: 11px;
+    border: none;
+    height: 22px;
+    font-size: 14px;
+    font-weight: 300;
+    cursor: pointer;
+    color: rgba(255,255,255,0.5);
+    background: rgba(255,255,255,0.1);
+    outline: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+  }
+
+  /* Terminal area */
+  #terminals {
+    position: relative;
+    width: 100%;
+    height: calc(100% - 31px);
+  }
+  .term-container {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    padding: 10px;
+    box-sizing: border-box;
+    display: none;
+  }
+  .term-container.active {
+    display: block;
+  }
+  .xterm { background: transparent !important; }
+  .xterm-viewport {
+    background: transparent !important;
+    overflow-y: hidden !important;
+  }
+  .xterm-screen { background: transparent !important; }
+  .xterm-viewport::-webkit-scrollbar { width: 0; height: 0; }
+</style>
+</head>
+<body>
+
+<div id="tab-bar">
+  <input id="rename-input" type="text" maxlength="20">
+  <div id="add-btn">+</div>
+</div>
+<div id="terminals"></div>
+
+<script src="xterm.js"></script>
+<script src="addon-fit.js"></script>
+<script>
+(function() {
+  var MAX_TABS = 3;
+  var MAX_TITLE_LEN = 20;
+  var tabs = {};
+  var tabOrder = [];
+  var activeTabId = null;
+  var nextId = 1;
+  var defaultTitle = '';  // Set by Swift (Claude Code version)
+
+  var termConfig = {
+    fontFamily: 'Menlo, "SF Mono", Monaco, monospace',
+    fontSize: 13,
+    lineHeight: 1.2,
+    cursorStyle: 'bar',
+    cursorBlink: false,
+    allowTransparency: true,
+    theme: {
+      background: 'transparent',
+      foreground: '#D8D8D8',
+      cursor: '#7CAFC2',
+      cursorAccent: 'transparent',
+      selectionBackground: 'rgba(108, 126, 230, 0.3)',
+      selectionForeground: '#F7F8F8',
+      black: '#000000', red: '#FF453A', green: '#30D158', yellow: '#FF9F0A',
+      blue: '#0A84FF', magenta: '#BF5AF2', cyan: '#7CAFC2', white: '#D8D8D8',
+      brightBlack: '#666666', brightRed: '#FF6961', brightGreen: '#4CD964',
+      brightYellow: '#FFD60A', brightBlue: '#64D2FF', brightMagenta: '#DA8FFF',
+      brightCyan: '#A8D8EA', brightWhite: '#F7F8F8'
+    },
+    scrollback: 5000,
+    macOptionIsMeta: true,
+    macOptionClickForcesSelection: true,
+    allowProposedApi: true
+  };
+
+  function postToSwift(action, data) {
+    if (window.webkit && window.webkit.messageHandlers.terminal) {
+      window.webkit.messageHandlers.terminal.postMessage(
+        Object.assign({ action: action }, data || {})
+      );
+    }
+  }
+
+  function stringToBase64(str) {
+    var bytes = new TextEncoder().encode(str);
+    var binary = '';
+    for (var i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
+    return btoa(binary);
+  }
+
+  function getDisplayTitle(tab) {
+    return tab.customTitle || defaultTitle || ('Tab ' + tab.id);
+  }
+
+  function refreshTabBar() {
+    // Always hide rename input when rebuilding tab bar
+    if (!renamingTabId) {
+      document.getElementById('rename-input').style.display = 'none';
+    }
+
+    var bar = document.getElementById('tab-bar');
+    var termArea = document.getElementById('terminals');
+
+    // Hide tab bar when single tab
+    if (tabOrder.length <= 1) {
+      bar.style.display = 'none';
+      termArea.style.height = '100%';
+    } else {
+      bar.style.display = 'flex';
+      termArea.style.height = 'calc(100% - 31px)';
+    }
+
+    var oldBtns = bar.querySelectorAll('.tab-btn');
+    for (var i = 0; i < oldBtns.length; i++) oldBtns[i].remove();
+
+    var addBtn = document.getElementById('add-btn');
+    for (var i = 0; i < tabOrder.length; i++) {
+      var id = tabOrder[i];
+      var tab = tabs[id];
+      var btn = document.createElement('div');
+      btn.className = 'tab-btn' + (id === activeTabId ? ' active' : '');
+      btn.dataset.tabId = id;
+
+      // Tab title span
+      var titleSpan = document.createElement('span');
+      titleSpan.textContent = getDisplayTitle(tab);
+      btn.appendChild(titleSpan);
+
+      // Close button (visible only on active tab via CSS)
+      var closeBtn = document.createElement('span');
+      closeBtn.className = 'tab-close';
+      closeBtn.textContent = '\u00d7';
+      closeBtn.addEventListener('click', (function(tabId) {
+        return function(e) {
+          e.stopPropagation();
+          if (tabOrder.length > 1) {
+            termManager.closeTab(tabId);
+          }
+        };
+      })(id));
+      btn.appendChild(closeBtn);
+
+      // Single click → switch tab
+      btn.addEventListener('click', (function(tabId) {
+        return function(e) {
+          termManager.switchTab(tabId);
+        };
+      })(id));
+
+      // Double click → rename
+      btn.addEventListener('dblclick', (function(tabId, btnEl) {
+        return function(e) {
+          e.preventDefault();
+          startRename(tabId, btnEl);
+        };
+      })(id, btn));
+
+      bar.insertBefore(btn, addBtn);
+    }
+    addBtn.style.display = tabOrder.length >= MAX_TABS ? 'none' : '';
+
+    // Refit active terminal after tab bar show/hide changes height
+    requestAnimationFrame(function() {
+      if (activeTabId && tabs[activeTabId]) {
+        tabs[activeTabId].fitAddon.fit();
+      }
+    });
+  }
+
+  var renamingTabId = null;
+  var renamingBtnEl = null;
+
+  function startRename(tabId, btnEl) {
+    var tab = tabs[tabId];
+    if (!tab) return;
+    renamingTabId = tabId;
+    renamingBtnEl = btnEl;
+
+    // Hide the pill text
+    btnEl.style.color = 'transparent';
+
+    var input = document.getElementById('rename-input');
+    var rect = btnEl.getBoundingClientRect();
+    input.style.left = rect.left + 'px';
+    input.style.top = rect.top + 'px';
+    input.style.width = rect.width + 'px';
+    input.style.height = rect.height + 'px';
+    input.style.display = 'block';
+    input.value = getDisplayTitle(tab);
+    input.focus();
+    input.select();
+  }
+
+  // Rename input handlers
+  (function() {
+    var input = document.getElementById('rename-input');
+    var finishing = false;
+
+    function finishRename(save) {
+      if (finishing || !renamingTabId) return;
+      finishing = true;
+      var tab = tabs[renamingTabId];
+      if (tab && save) {
+        var val = input.value.trim().substring(0, MAX_TITLE_LEN);
+        tab.customTitle = val || null;
+      }
+      // Restore pill text
+      if (renamingBtnEl) {
+        renamingBtnEl.style.color = '';
+        renamingBtnEl = null;
+      }
+      input.style.display = 'none';
+      renamingTabId = null;
+      finishing = false;
+      refreshTabBar();
+      if (activeTabId && tabs[activeTabId]) tabs[activeTabId].term.focus();
+    }
+
+    input.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') { e.preventDefault(); finishRename(true); }
+      else if (e.key === 'Escape') { e.preventDefault(); finishRename(false); }
+    });
+    input.addEventListener('blur', function() { finishRename(true); });
+  })();
+
+  // Add button click
+  document.getElementById('add-btn').addEventListener('click', function() {
+    termManager.createTab();
+  });
+
+  window.termManager = {
+    createTab: function() {
+      if (tabOrder.length >= MAX_TABS) return null;
+
+      var id = String(nextId++);
+      var container = document.createElement('div');
+      container.className = 'term-container';
+      container.id = 'term-' + id;
+      document.getElementById('terminals').appendChild(container);
+
+      var term = new Terminal(termConfig);
+      var fitAddon = new FitAddon.FitAddon();
+      term.loadAddon(fitAddon);
+      term.open(container);
+
+      term.onData(function(data) {
+        postToSwift('data', { tabId: id, data: stringToBase64(data) });
+      });
+      term.onBinary(function(data) {
+        postToSwift('data', { tabId: id, data: btoa(data) });
+      });
+      term.onResize(function(size) {
+        postToSwift('resize', { tabId: id, cols: size.cols, rows: size.rows });
+      });
+
+      tabs[id] = { id: id, term: term, fitAddon: fitAddon, containerEl: container, customTitle: null };
+      tabOrder.push(id);
+
+      this.switchTab(id);
+      postToSwift('tabCreated', { tabId: id });
+      return id;
+    },
+
+    closeTab: function(id) {
+      if (!tabs[id]) return;
+      if (tabOrder.length <= 1) return;
+
+      tabs[id].term.dispose();
+      tabs[id].containerEl.remove();
+      delete tabs[id];
+      tabOrder = tabOrder.filter(function(tid) { return tid !== id; });
+
+      if (activeTabId === id) {
+        this.switchTab(tabOrder[tabOrder.length - 1]);
+      } else {
+        refreshTabBar();
+      }
+      postToSwift('tabClosed', { tabId: id });
+    },
+
+    switchTab: function(id) {
+      if (!tabs[id]) return;
+      if (id === activeTabId) return;  // Already active, don't refresh
+
+      for (var i = 0; i < tabOrder.length; i++) {
+        tabs[tabOrder[i]].containerEl.classList.remove('active');
+      }
+
+      activeTabId = id;
+      tabs[id].containerEl.classList.add('active');
+
+      requestAnimationFrame(function() {
+        tabs[id].fitAddon.fit();
+        tabs[id].term.focus();
+      });
+
+      refreshTabBar();
+      postToSwift('tabSwitched', { tabId: id });
+    },
+
+    writeBase64: function(tabId, b64) {
+      if (!tabs[tabId]) return;
+      try {
+        var binary = atob(b64);
+        var bytes = new Uint8Array(binary.length);
+        for (var i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+        tabs[tabId].term.write(bytes);
+      } catch(e) {}
+    },
+
+    fitActive: function() {
+      if (activeTabId && tabs[activeTabId]) {
+        tabs[activeTabId].fitAddon.fit();
+      }
+    },
+
+    setDefaultTitle: function(title) {
+      defaultTitle = title;
+      refreshTabBar();
+    },
+
+    setFontSize: function(size) {
+      var ids = Object.keys(tabs);
+      for (var i = 0; i < ids.length; i++) {
+        tabs[ids[i]].term.options.fontSize = size;
+        if (ids[i] === activeTabId) {
+          tabs[ids[i]].fitAddon.fit();
+        }
+      }
+    },
+
+    setBackgroundOpacity: function(opacity) {
+      document.body.style.background = 'rgba(20, 20, 22, ' + opacity + ')';
+    },
+
+    getActiveTabId: function() {
+      return activeTabId;
+    },
+
+    getTabCount: function() {
+      return tabOrder.length;
+    },
+
+    switchToIndex: function(index) {
+      if (index >= 0 && index < tabOrder.length) {
+        this.switchTab(tabOrder[index]);
+      }
+    },
+
+    // Called by Swift on first expand
+    ready: function() {
+      if (tabOrder.length === 0) {
+        this.createTab();
+      } else {
+        this.fitActive();
+      }
+    }
+  };
+
+  // Auto-fit on resize
+  new ResizeObserver(function() {
+    if (activeTabId && tabs[activeTabId]) {
+      try { tabs[activeTabId].fitAddon.fit(); } catch(e) {}
+    }
+  }).observe(document.getElementById('terminals'));
+})();
+</script>
+</body>
+</html>

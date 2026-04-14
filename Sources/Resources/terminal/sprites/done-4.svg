@@ -1,0 +1,11 @@
+<svg preserveAspectRatio="none" width="100%" height="100%" overflow="visible" style="display: block;" viewBox="0 0 47 25" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="Frame 6">
+<rect id="Rectangle 10" x="30" y="13" width="9" height="12" fill="var(--fill-0, white)" fill-opacity="0.5"/>
+<rect id="Rectangle 11" x="39" y="13" width="8" height="12" fill="var(--fill-0, #3AD372)"/>
+<path id="Rectangle 5" d="M0 25C0 18.3726 5.37258 13 12 13H24V25H0V25Z" fill="var(--fill-0, white)" fill-opacity="0.5"/>
+<rect id="Rectangle 6" x="22" y="13" width="8" height="12" fill="var(--fill-0, #3AD372)"/>
+<rect id="Rectangle 9" x="22" y="17" width="4" height="4" fill="var(--fill-0, black)"/>
+<rect id="Rectangle 12" x="39" y="17" width="4" height="4" fill="var(--fill-0, black)"/>
+<path id="Vector 4" d="M33.0107 5.43957C33.5233 5.94074 35.1552 7.14027 36.5003 7.59821C36.7909 7.69713 37.0674 7.69842 37.3375 7.62622C39.2967 6.02072 41.9334 3.22843 42.4467 2.48405C42.6638 2.15308 42.7926 1.91709 43.0601 1.11438" stroke="var(--stroke-0, #3AD372)" stroke-width="2" stroke-linecap="round"/>
+</g>
+</svg>

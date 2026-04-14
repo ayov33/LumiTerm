@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  @property --glow-hue {
+    syntax: '<number>';
+    initial-value: 220;
+    inherits: false;
+  }
+  @property --glow-intensity {
+    syntax: '<number>';
+    initial-value: 0.3;
+    inherits: false;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body {
+    width: 100%; height: 100%;
+    background: transparent !important;
+    overflow: hidden;
+  }
+
+  #capsule {
+    width: 100%; height: 100%;
+    position: relative;
+    border-radius: 15px;
+    transition: box-shadow 0.3s ease;
+  }
+
+  /* === Aurora blobs === */
+  #aurora {
+    position: absolute;
+    inset: 0;
+    border-radius: 15px;
+    overflow: hidden;
+    z-index: 2;
+  }
+  .blob {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(14px);
+    mix-blend-mode: screen;
+    will-change: transform;
+  }
+  .b1 { width: 45px; height: 45px; background: rgba(100,160,255,0.9); }
+  .b2 { width: 40px; height: 40px; background: rgba(170,80,245,0.85); }
+  .b3 { width: 38px; height: 38px; background: rgba(40,220,190,0.85); }
+  .b4 { width: 35px; height: 35px; background: rgba(240,100,180,0.7); }
+  .b5 { width: 32px; height: 32px; background: rgba(130,180,255,0.8); }
+  .b6 { width: 28px; height: 28px; background: rgba(200,200,255,0.5); }
+
+  /* Vertical blobs — normal speed */
+  body.vertical .b1 { animation: vy1 6s ease-in-out infinite, vx1 8s ease-in-out infinite; }
+  body.vertical .b2 { animation: vy2 5s ease-in-out infinite, vx2 7s ease-in-out infinite; }
+  body.vertical .b3 { animation: vy3 4.5s ease-in-out infinite, vx3 6.5s ease-in-out infinite; }
+  body.vertical .b4 { animation: vy4 7s ease-in-out infinite, vx4 5.5s ease-in-out infinite; }
+  body.vertical .b5 { animation: vy5 5.5s ease-in-out infinite, vx5 9s ease-in-out infinite; }
+  body.vertical .b6 { animation: vy6 4s ease-in-out infinite, vx6 7.5s ease-in-out infinite; }
+
+  /* Idle: gentle movement */
+  body.vertical.idle .b1 { animation-duration: 10s, 13s; opacity: 0.6; }
+  body.vertical.idle .b2 { animation-duration: 9s, 12s; opacity: 0.6; }
+  body.vertical.idle .b3 { animation-duration: 8s, 11s; opacity: 0.6; }
+  body.vertical.idle .b4 { animation-duration: 11s, 10s; opacity: 0.6; }
+  body.vertical.idle .b5 { animation-duration: 9.5s, 14s; opacity: 0.6; }
+  body.vertical.idle .b6 { animation-duration: 8s, 12.5s; opacity: 0.6; }
+
+  /* Running: faster blobs */
+  body.vertical.running .b1 { animation-duration: 3s, 4s; }
+  body.vertical.running .b2 { animation-duration: 2.5s, 3.5s; }
+  body.vertical.running .b3 { animation-duration: 2.2s, 3.2s; }
+  body.vertical.running .b4 { animation-duration: 3.5s, 2.8s; }
+  body.vertical.running .b5 { animation-duration: 2.8s, 4.5s; }
+  body.vertical.running .b6 { animation-duration: 2s, 3.8s; }
+
+  @keyframes vy1 { 0%,100% { top: -10px; } 50% { top: 65px; } }
+  @keyframes vx1 { 0%,100% { left: -14px; } 50% { left: -6px; } }
+  @keyframes vy2 { 0%,100% { top: 70px; } 50% { top: -8px; } }
+  @keyframes vx2 { 0%,100% { left: -8px; } 50% { left: -16px; } }
+  @keyframes vy3 { 0%,100% { top: 30px; } 33% { top: 75px; } 66% { top: -8px; } }
+  @keyframes vx3 { 0%,100% { left: -10px; } 50% { left: -5px; } }
+  @keyframes vy4 { 0%,100% { top: 50px; } 50% { top: 5px; } }
+  @keyframes vx4 { 0%,100% { left: -6px; } 50% { left: -14px; } }
+  @keyframes vy5 { 0%,100% { top: -5px; } 33% { top: 45px; } 66% { top: 80px; } }
+  @keyframes vx5 { 0%,100% { left: -12px; } 50% { left: -4px; } }
+  @keyframes vy6 { 0%,100% { top: 40px; } 50% { top: 10px; } }
+  @keyframes vx6 { 0%,100% { left: -8px; } 50% { left: -10px; } }
+
+  /* Horizontal blobs — normal speed */
+  body.horizontal .b1 { animation: hy1 8s ease-in-out infinite, hx1 6s ease-in-out infinite; }
+  body.horizontal .b2 { animation: hy2 7s ease-in-out infinite, hx2 5s ease-in-out infinite; }
+  body.horizontal .b3 { animation: hy3 6.5s ease-in-out infinite, hx3 4.5s ease-in-out infinite; }
+  body.horizontal .b4 { animation: hy4 5.5s ease-in-out infinite, hx4 7s ease-in-out infinite; }
+  body.horizontal .b5 { animation: hy5 9s ease-in-out infinite, hx5 5.5s ease-in-out infinite; }
+  body.horizontal .b6 { animation: hy6 7.5s ease-in-out infinite, hx6 4s ease-in-out infinite; }
+
+  /* Idle: gentle movement */
+  body.horizontal.idle .b1 { animation-duration: 13s, 10s; opacity: 0.6; }
+  body.horizontal.idle .b2 { animation-duration: 12s, 9s; opacity: 0.6; }
+  body.horizontal.idle .b3 { animation-duration: 11s, 8s; opacity: 0.6; }
+  body.horizontal.idle .b4 { animation-duration: 10s, 11s; opacity: 0.6; }
+  body.horizontal.idle .b5 { animation-duration: 14s, 9.5s; opacity: 0.6; }
+  body.horizontal.idle .b6 { animation-duration: 12.5s, 8s; opacity: 0.6; }
+
+  /* Running: faster */
+  body.horizontal.running .b1 { animation-duration: 4s, 3s; }
+  body.horizontal.running .b2 { animation-duration: 3.5s, 2.5s; }
+  body.horizontal.running .b3 { animation-duration: 3.2s, 2.2s; }
+  body.horizontal.running .b4 { animation-duration: 2.8s, 3.5s; }
+  body.horizontal.running .b5 { animation-duration: 4.5s, 2.8s; }
+  body.horizontal.running .b6 { animation-duration: 3.8s, 2s; }
+
+  @keyframes hx1 { 0%,100% { left: -10px; } 50% { left: 65px; } }
+  @keyframes hy1 { 0%,100% { top: -14px; } 50% { top: -6px; } }
+  @keyframes hx2 { 0%,100% { left: 70px; } 50% { left: -8px; } }
+  @keyframes hy2 { 0%,100% { top: -8px; } 50% { top: -16px; } }
+  @keyframes hx3 { 0%,100% { left: 30px; } 33% { left: 75px; } 66% { left: -8px; } }
+  @keyframes hy3 { 0%,100% { top: -10px; } 50% { top: -5px; } }
+  @keyframes hx4 { 0%,100% { left: 50px; } 50% { left: 5px; } }
+  @keyframes hy4 { 0%,100% { top: -6px; } 50% { top: -14px; } }
+  @keyframes hx5 { 0%,100% { left: -5px; } 33% { left: 45px; } 66% { left: 80px; } }
+  @keyframes hy5 { 0%,100% { top: -12px; } 50% { top: -4px; } }
+  @keyframes hx6 { 0%,100% { left: 40px; } 50% { left: 10px; } }
+  @keyframes hy6 { 0%,100% { top: -8px; } 50% { top: -10px; } }
+
+  /* === Glow Pulse (Running) — @property driven === */
+  #capsule.running {
+    animation:
+      glowPulse 2.5s ease-in-out infinite,
+      glowHueShift 6s linear infinite;
+  }
+  @keyframes glowPulse {
+    0%, 100% { --glow-intensity: 0.5; }
+    50%      { --glow-intensity: 1.0; }
+  }
+  @keyframes glowHueShift {
+    0%   { --glow-hue: 220; }
+    33%  { --glow-hue: 270; }
+    66%  { --glow-hue: 185; }
+    100% { --glow-hue: 220; }
+  }
+
+  /* === Done flash === */
+  #done-flash {
+    position: absolute;
+    inset: 0;
+    border-radius: 15px;
+    background: rgba(48, 209, 88, 0.6);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    pointer-events: none;
+    z-index: 10;
+  }
+
+  /* === Pixel Pet === */
+  #pet {
+    position: absolute;
+    inset: 0;
+    display: none;
+    overflow: visible;
+    z-index: 5;
+  }
+  #pet.vertical {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  #pet.horizontal {
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+  }
+  #pet.vertical #pet-svg-container,
+  #pet.vertical #pet-stroke-container {
+    transform: rotate(-90deg);
+  }
+  #pet-svg-container, #pet-stroke-container {
+    position: absolute;
+    overflow: visible;
+  }
+  #pet.horizontal #pet-svg-container,
+  #pet.horizontal #pet-stroke-container {
+    bottom: -2px;
+    left: 50%;
+    transform: translateX(-50%);
+  }
+  #pet.vertical #pet-svg-container,
+  #pet.vertical #pet-stroke-container {
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) rotate(-90deg);
+  }
+  #pet img {
+    image-rendering: pixelated;
+  }
+  #pet svg {
+    overflow: visible;
+  }
+  /* Stroke draw animation for the antenna line */
+  @keyframes drawLine {
+    0% { stroke-dashoffset: 120; }
+    100% { stroke-dashoffset: 0; }
+  }
+  #pet .antenna-line {
+    stroke-dasharray: 120;
+    stroke-dashoffset: 120;
+    animation: drawLine 1.5s ease-out forwards;
+  }
+  #pet svg .draw-stroke {
+    stroke-dasharray: 120;
+    stroke-dashoffset: 120;
+    animation: drawLine 1.5s ease-out forwards;
+  }
+  #pet svg .draw-stroke-slow {
+    stroke-dasharray: 120;
+    stroke-dashoffset: 120;
+    animation: drawLine 1.5s ease-out forwards;
+  }
+</style>
+</head>
+<body class="vertical idle">
+
+<div id="capsule">
+  <div id="aurora">
+    <div class="blob b1"></div>
+    <div class="blob b2"></div>
+    <div class="blob b3"></div>
+    <div class="blob b4"></div>
+    <div class="blob b5"></div>
+    <div class="blob b6"></div>
+  </div>
+  <div id="pet">
+    <div id="pet-svg-container"></div>
+    <div id="pet-stroke-container"></div>
+  </div>
+  <div id="done-flash"></div>
+</div>
+
+<script>
+(function() {
+  var capsule = document.getElementById('capsule');
+  var auroraEl = document.getElementById('aurora');
+  var petEl = document.getElementById('pet');
+  var petSvgContainer = document.getElementById('pet-svg-container');
+  var petStrokeContainer = document.getElementById('pet-stroke-container');
+  var doneFlash = document.getElementById('done-flash');
+  var doneTimer = null;
+  var glowRAF = null;
+  var isRunning = false;
+  var currentMode = 'aurora';  // 'aurora' or 'pet'
+  var petAnimTimer = null;
+  var petIdleRedrawTimer = null;
+  var petState = 'idle';
+
+  // Inline SVG data — no fetch needed (WKWebView file:// fetch is restricted)
+  var svgData = {
+    'idle': '<svg width="100%" height="100%" overflow="visible" viewBox="0 0 47 26" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="30" y="14" width="9" height="12" fill="white" fill-opacity="0.5"/><rect x="39" y="14" width="8" height="12" fill="white"/><path d="M0 26C0 19.3725 5.37258 14 12 14H24V26H0V26Z" fill="white" fill-opacity="0.5"/><rect x="22" y="14" width="8" height="12" fill="white"/><rect x="22" y="18" width="4" height="4" fill="black"/><rect x="39" y="18" width="4" height="4" fill="black"/><path id="Vector" d="M26.4397 2.5599C26.3632 2.56089 26.0771 2.63096 25.1351 3.24039C24.6966 3.52406 24.1156 4.03971 23.6886 4.42249C22.9998 5.04013 22.6308 5.56743 22.3699 5.95727C22.0428 6.44612 21.9271 7.71521 22.045 8.50763C22.1048 8.90989 22.7211 8.92889 23.6645 8.99621C24.0328 9.0225 24.3676 8.91878 25.4471 8.42926C26.3566 8.01683 27.9471 7.15882 29.8689 5.87388C31.7906 4.58894 33.9819 2.87428 35.1617 1.96538C36.3414 1.05647 36.4434 1.00527 36.5162 1.00035C36.5891 0.995427 36.6298 1.03833 36.6428 1.09059C36.6557 1.14285 36.6397 1.20317 36.459 1.74247C36.2783 2.28178 35.9334 3.29824 35.7324 3.99408C35.4356 5.02145 35.4366 5.5207 35.4823 5.73502C35.5193 5.90859 36.3318 5.86935 37.4329 5.81273C37.9172 5.78782 38.244 5.68206 38.8136 5.45015C39.3832 5.21823 40.1841 4.84071 41.0508 4.29011C41.9174 3.73952 42.8256 3.0273 43.3225 2.64369C43.8195 2.26009 43.8778 2.22669 43.918 2.25513C44.0276 2.33271 43.9994 2.79326 43.9887 3.36103C43.9812 3.75857 43.7231 4.60471 43.3316 5.79087C43.1514 6.28712 43.0089 6.56881 42.8466 6.84369C42.6843 7.11856 42.5065 7.37809 42.279 7.69803" stroke="white" stroke-width="2" stroke-linecap="round"/></svg>',
+    'thinking-1': '<svg width="100%" height="100%" overflow="visible" viewBox="0 0 54.4441 29.9411" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="30" y="17.9411" width="9" height="12" fill="white" fill-opacity="0.5"/><rect x="39" y="17.9411" width="8" height="12" fill="white"/><path d="M0 29.9411C0 23.3137 5.37258 17.9411 12 17.9411H24V29.9411H0V29.9411Z" fill="white" fill-opacity="0.5"/><rect x="22" y="17.9411" width="8" height="12" fill="white"/><rect x="22" y="21.9411" width="4" height="4" fill="black"/><rect x="39" y="21.9411" width="4" height="4" fill="black"/><path id="Vector" d="M35.1824 14.6831C36.2083 14.6968 38.4622 14.6509 38.8239 14.4729C39.4648 14.1575 40.0316 13.0656 40.3511 12.3676C40.5741 11.8802 40.3999 11.2965 39.9813 10.4122C39.7105 9.84029 39.0778 9.60028 38.5053 9.41004C37.8197 9.18218 37.0451 9.36852 36.7998 9.43959C36.0858 9.64644 36.612 11.4835 36.8329 11.9401C37.0771 12.4449 37.872 12.6504 40.3446 13.0639C42.1564 13.3669 43.2826 13.127 43.7415 12.9643C44.7658 12.6011 45.8991 11.9313 46.7024 11.3767C47.3336 10.9409 47.5517 10.4443 47.6944 9.82686C47.8812 9.01827 47.7156 8.38378 47.6611 8.20669C47.4769 7.60869 46.7063 6.95344 46.2642 6.67071C45.8715 6.41958 45.1462 6.65437 44.8183 6.8319C44.738 6.87536 44.6692 6.95014 44.6123 7.02028C44.1416 7.60102 44.566 9.04559 44.9121 9.68205C45.3697 10.5235 46.1114 10.7458 47.3446 11.1269C48.1569 11.378 48.8196 11.2419 49.2909 11.0816C50.0543 10.8218 50.7235 10.3293 51.2161 9.90662C52.202 9.06055 52.5931 7.85996 52.9599 6.58185C53.1845 5.79905 53.2896 4.69366 53.3706 3.8529C53.4515 3.01215 53.4545 2.45673 53.4321 2.04174C53.4096 1.62675 53.3617 1.36902 53.2765 1.00022" stroke="white" stroke-width="2" stroke-miterlimit="16" stroke-linecap="round"/></svg>',
+    'thinking-2': '<svg width="100%" height="100%" overflow="visible" viewBox="0 0 54.4441 29.9411" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="30" y="17.9411" width="9" height="12" fill="white" fill-opacity="0.5"/><rect x="39" y="17.9411" width="8" height="12" fill="white"/><path d="M0 29.9411C0 23.3137 5.37258 17.9411 12 17.9411H24V29.9411H0V29.9411Z" fill="white" fill-opacity="0.5"/><rect x="22" y="17.9411" width="8" height="12" fill="white"/><rect x="22" y="22.9411" width="4" height="3" fill="black"/><rect x="39" y="22.9411" width="4" height="3" fill="black"/><path id="Vector" d="M35.1824 14.6831C36.2083 14.6968 38.4622 14.6509 38.8239 14.4729C39.4648 14.1575 40.0316 13.0656 40.3511 12.3676C40.5741 11.8802 40.3999 11.2965 39.9813 10.4122C39.7105 9.84029 39.0778 9.60028 38.5053 9.41004C37.8197 9.18218 37.0451 9.36852 36.7998 9.43959C36.0858 9.64644 36.612 11.4835 36.8329 11.9401C37.0771 12.4449 37.872 12.6504 40.3446 13.0639C42.1564 13.3669 43.2826 13.127 43.7415 12.9643C44.7658 12.6011 45.8991 11.9313 46.7024 11.3767C47.3336 10.9409 47.5517 10.4443 47.6944 9.82686C47.8812 9.01827 47.7156 8.38378 47.6611 8.20669C47.4769 7.60869 46.7063 6.95344 46.2642 6.67071C45.8715 6.41958 45.1462 6.65437 44.8183 6.8319C44.738 6.87536 44.6692 6.95014 44.6123 7.02028C44.1416 7.60102 44.566 9.04559 44.9121 9.68205C45.3697 10.5235 46.1114 10.7458 47.3446 11.1269C48.1569 11.378 48.8196 11.2419 49.2909 11.0816C50.0543 10.8218 50.7235 10.3293 51.2161 9.90662C52.202 9.06055 52.5931 7.85996 52.9599 6.58185C53.1845 5.79905 53.2896 4.69366 53.3706 3.8529C53.4515 3.01215 53.4545 2.45673 53.4321 2.04174C53.4096 1.62675 53.3617 1.36902 53.2765 1.00022" stroke="white" stroke-width="2" stroke-miterlimit="16" stroke-linecap="round"/></svg>',
+    'thinking-3': '<svg width="100%" height="100%" overflow="visible" viewBox="0 0 54.4441 29.9411" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="30" y="17.9411" width="9" height="12" fill="white" fill-opacity="0.5"/><rect x="39" y="17.9411" width="8" height="12" fill="white"/><path d="M0 29.9411C0 23.3137 5.37258 17.9411 12 17.9411H24V29.9411H0V29.9411Z" fill="white" fill-opacity="0.5"/><rect x="22" y="17.9411" width="8" height="12" fill="white"/><rect x="22" y="23.9411" width="4" height="2" fill="black"/><rect x="39" y="23.9411" width="4" height="2" fill="black"/><path id="Vector" d="M35.1824 14.6831C36.2083 14.6968 38.4622 14.6509 38.8239 14.4729C39.4648 14.1575 40.0316 13.0656 40.3511 12.3676C40.5741 11.8802 40.3999 11.2965 39.9813 10.4122C39.7105 9.84029 39.0778 9.60028 38.5053 9.41004C37.8197 9.18218 37.0451 9.36852 36.7998 9.43959C36.0858 9.64644 36.612 11.4835 36.8329 11.9401C37.0771 12.4449 37.872 12.6504 40.3446 13.0639C42.1564 13.3669 43.2826 13.127 43.7415 12.9643C44.7658 12.6011 45.8991 11.9313 46.7024 11.3767C47.3336 10.9409 47.5517 10.4443 47.6944 9.82686C47.8812 9.01827 47.7156 8.38378 47.6611 8.20669C47.4769 7.60869 46.7063 6.95344 46.2642 6.67071C45.8715 6.41958 45.1462 6.65437 44.8183 6.8319C44.738 6.87536 44.6692 6.95014 44.6123 7.02028C44.1416 7.60102 44.566 9.04559 44.9121 9.68205C45.3697 10.5235 46.1114 10.7458 47.3446 11.1269C48.1569 11.378 48.8196 11.2419 49.2909 11.0816C50.0543 10.8218 50.7235 10.3293 51.2161 9.90662C52.202 9.06055 52.5931 7.85996 52.9599 6.58185C53.1845 5.79905 53.2896 4.69366 53.3706 3.8529C53.4515 3.01215 53.4545 2.45673 53.4321 2.04174C53.4096 1.62675 53.3617 1.36902 53.2765 1.00022" stroke="white" stroke-width="2" stroke-miterlimit="16" stroke-linecap="round"/></svg>',
+    'thinking-4': '<svg width="100%" height="100%" overflow="visible" viewBox="0 0 54.4441 29.9411" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="30" y="17.9411" width="9" height="12" fill="white" fill-opacity="0.5"/><rect x="39" y="17.9411" width="8" height="12" fill="white"/><path d="M0 29.9411C0 23.3137 5.37258 17.9411 12 17.9411H24V29.9411H0V29.9411Z" fill="white" fill-opacity="0.5"/><rect x="22" y="17.9411" width="8" height="12" fill="white"/><rect x="22" y="24.9411" width="4" height="1" fill="black"/><rect x="39" y="24.9411" width="4" height="1" fill="black"/><path id="Vector" d="M35.1824 14.6831C36.2083 14.6968 38.4622 14.6509 38.8239 14.4729C39.4648 14.1575 40.0316 13.0656 40.3511 12.3676C40.5741 11.8802 40.3999 11.2965 39.9813 10.4122C39.7105 9.84029 39.0778 9.60028 38.5053 9.41004C37.8197 9.18218 37.0451 9.36852 36.7998 9.43959C36.0858 9.64644 36.612 11.4835 36.8329 11.9401C37.0771 12.4449 37.872 12.6504 40.3446 13.0639C42.1564 13.3669 43.2826 13.127 43.7415 12.9643C44.7658 12.6011 45.8991 11.9313 46.7024 11.3767C47.3336 10.9409 47.5517 10.4443 47.6944 9.82686C47.8812 9.01827 47.7156 8.38378 47.6611 8.20669C47.4769 7.60869 46.7063 6.95344 46.2642 6.67071C45.8715 6.41958 45.1462 6.65437 44.8183 6.8319C44.738 6.87536 44.6692 6.95014 44.6123 7.02028C44.1416 7.60102 44.566 9.04559 44.9121 9.68205C45.3697 10.5235 46.1114 10.7458 47.3446 11.1269C48.1569 11.378 48.8196 11.2419 49.2909 11.0816C50.0543 10.8218 50.7235 10.3293 51.2161 9.90662C52.202 9.06055 52.5931 7.85996 52.9599 6.58185C53.1845 5.79905 53.2896 4.69366 53.3706 3.8529C53.4515 3.01215 53.4545 2.45673 53.4321 2.04174C53.4096 1.62675 53.3617 1.36902 53.2765 1.00022" stroke="white" stroke-width="2" stroke-miterlimit="16" stroke-linecap="round"/></svg>',
+    'done-1': '<svg width="100%" height="100%" overflow="visible" viewBox="0 0 47 25" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="30" y="13" width="9" height="12" fill="white" fill-opacity="0.5"/><rect x="39" y="13" width="8" height="12" fill="white"/><path d="M0 25C0 18.3726 5.37258 13 12 13H24V25H0V25Z" fill="white" fill-opacity="0.5"/><rect x="22" y="13" width="8" height="12" fill="white"/><rect x="22" y="18" width="8" height="2" fill="#3AD372"/><rect x="39" y="18" width="8" height="2" fill="#3AD372"/><rect x="22" y="17" width="4" height="4" fill="black"/><rect x="39" y="17" width="4" height="4" fill="black"/><path id="Vector" d="M33.0107 5.43953C33.5232 5.9407 35.1551 7.14023 36.5003 7.59818C36.7908 7.6971 37.0674 7.69838 37.3374 7.62619C39.2967 6.02068 41.9333 3.22839 42.4467 2.48401C42.6637 2.15305 42.7926 1.91706 43.06 1.11434" stroke="#3AD372" stroke-width="2" stroke-linecap="round"/></svg>',
+    'done-2': '<svg width="100%" height="100%" overflow="visible" viewBox="0 0 47 25" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="30" y="13" width="9" height="12" fill="white" fill-opacity="0.5"/><rect x="39" y="13" width="8" height="12" fill="white"/><path d="M0 25C0 18.3726 5.37258 13 12 13H24V25H0V25Z" fill="white" fill-opacity="0.5"/><rect x="22" y="13" width="8" height="12" fill="white"/><rect x="22" y="17" width="8" height="4" fill="#3AD372"/><rect x="39" y="17" width="8" height="4" fill="#3AD372"/><rect x="22" y="17" width="4" height="4" fill="black"/><rect x="39" y="17" width="4" height="4" fill="black"/><path id="Vector" d="M33.0107 5.43957C33.5233 5.94074 35.1552 7.14027 36.5003 7.59821C36.7909 7.69713 37.0674 7.69842 37.3375 7.62622C39.2967 6.02072 41.9334 3.22843 42.4467 2.48405C42.6638 2.15308 42.7926 1.91709 43.0601 1.11438" stroke="#3AD372" stroke-width="2" stroke-linecap="round"/></svg>',
+    'done-3': '<svg width="100%" height="100%" overflow="visible" viewBox="0 0 47 25" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="30" y="13" width="9" height="12" fill="white" fill-opacity="0.5"/><rect x="39" y="13" width="8" height="12" fill="white"/><path d="M0 25C0 18.3726 5.37258 13 12 13H24V25H0V25Z" fill="white" fill-opacity="0.5"/><rect x="22" y="13" width="8" height="12" fill="white"/><rect x="22" y="15" width="8" height="8" fill="#3AD372"/><rect x="39" y="15" width="8" height="8" fill="#3AD372"/><rect x="22" y="17" width="4" height="4" fill="black"/><rect x="39" y="17" width="4" height="4" fill="black"/><path id="Vector" d="M33.0107 5.43957C33.5233 5.94074 35.1552 7.14027 36.5003 7.59821C36.7909 7.69713 37.0674 7.69842 37.3375 7.62622C39.2967 6.02072 41.9334 3.22843 42.4467 2.48405C42.6638 2.15308 42.7926 1.91709 43.0601 1.11438" stroke="#3AD372" stroke-width="2" stroke-linecap="round"/></svg>',
+    'done-4': '<svg width="100%" height="100%" overflow="visible" viewBox="0 0 47 25" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="30" y="13" width="9" height="12" fill="white" fill-opacity="0.5"/><rect x="39" y="13" width="8" height="12" fill="#3AD372"/><path d="M0 25C0 18.3726 5.37258 13 12 13H24V25H0V25Z" fill="white" fill-opacity="0.5"/><rect x="22" y="13" width="8" height="12" fill="#3AD372"/><rect x="22" y="17" width="4" height="4" fill="black"/><rect x="39" y="17" width="4" height="4" fill="black"/><path id="Vector" d="M33.0107 5.43957C33.5233 5.94074 35.1552 7.14027 36.5003 7.59821C36.7909 7.69713 37.0674 7.69842 37.3375 7.62622C39.2967 6.02072 41.9334 3.22843 42.4467 2.48405C42.6638 2.15308 42.7926 1.91709 43.0601 1.11438" stroke="#3AD372" stroke-width="2" stroke-linecap="round"/></svg>'
+  };
+
+  var petFrameKeys = {
+    idle: ['idle'],
+    thinking: ['thinking-1', 'thinking-2', 'thinking-3', 'thinking-4'],
+    done: ['done-1', 'done-2', 'done-3', 'done-4']
+  };
+  var petFrameIndex = 0;
+
+  // Force uniform viewBox 66x32 for all states
+  // Content gets translated to align body bottoms at same y position
+  var uniformViewBox = '0 0 66 32';
+
+  function getTranslate(key) {
+    // Align body bottom to y≈30, center horizontally in 66-wide canvas
+    if (key.indexOf('thinking') === 0) return '5.8,2.06';   // body bottom 29.94 → +2.06 = 32, x: (66-54.4)/2
+    if (key.indexOf('done') === 0) return '9.5,7';           // body bottom 25 → +7 = 32, x: (66-47)/2
+    return '9.5,6';                                            // idle: body bottom 26 → +6 = 32
+  }
+
+  function makeSvg(inner, key) {
+    var t = getTranslate(key);
+    return '<svg width="55" height="30" viewBox="' + uniformViewBox + '" preserveAspectRatio="xMidYMax meet" fill="none" xmlns="http://www.w3.org/2000/svg" style="overflow:visible"><rect width="66" height="32" fill="none"/><g transform="translate(' + t + ')">' + inner + '</g></svg>';
+  }
+
+  function extractInner(svgText) {
+    return svgText.replace(/<svg[^>]*>/, '').replace(/<\/svg>/, '');
+  }
+
+  function showPetFrame(key, animClass) {
+    var svgText = svgData[key];
+    if (!svgText) return;
+    petSvgContainer.innerHTML = makeSvg(extractInner(svgText), key);
+    petStrokeContainer.innerHTML = '';
+    if (animClass) {
+      var paths = petSvgContainer.querySelectorAll('path[id^="Vector"]');
+      for (var i = 0; i < paths.length; i++) {
+        paths[i].classList.add(animClass);
+      }
+    }
+  }
+
+  function showPetBody(key) {
+    var svgText = svgData[key];
+    if (!svgText) return;
+    var bodyOnly = svgText.replace(/<path[^>]*id="Vector[^"]*"[^/]*\/>/g, '');
+    petSvgContainer.innerHTML = makeSvg(extractInner(bodyOnly), key);
+  }
+
+  function showPetStroke(key, animClass) {
+    var svgText = svgData[key];
+    if (!svgText) return;
+    var match = svgText.match(/<path[^>]*id="Vector[^"]*"[^/]*\/>/);
+    if (!match) { petStrokeContainer.innerHTML = ''; return; }
+    petStrokeContainer.innerHTML = makeSvg(match[0], key);
+    if (animClass) {
+      var paths = petStrokeContainer.querySelectorAll('path[id^="Vector"]');
+      for (var i = 0; i < paths.length; i++) {
+        paths[i].classList.add(animClass);
+      }
+    }
+  }
+
+  function startPetAnim(state) {
+    stopPetAnim();
+    petState = state;
+    petFrameIndex = 0;
+    var keys = petFrameKeys[state] || petFrameKeys.idle;
+
+    if (state === 'idle') {
+      showPetFrame(keys[0], 'draw-stroke');
+      petIdleRedrawTimer = setInterval(function() {
+        showPetFrame(keys[0], 'draw-stroke');
+      }, 10000);
+    } else if (state === 'thinking') {
+      // Body cycles fast (eyeblink), stroke draws slow independently
+      showPetBody(keys[0]);
+      showPetStroke(keys[0], 'draw-stroke');
+      if (keys.length > 1) {
+        // Body: cycle every 300ms (fast eyeblink)
+        petAnimTimer = setInterval(function() {
+          petFrameIndex = (petFrameIndex + 1) % keys.length;
+          showPetBody(keys[petFrameIndex]);
+        }, 300);
+        // Stroke: redraw every full cycle (300ms * 4 frames = 1.2s, close to 1.5s draw time)
+        petIdleRedrawTimer = setInterval(function() {
+          showPetStroke(keys[petFrameIndex], 'draw-stroke');
+        }, 1500);
+      }
+    } else if (state === 'done') {
+      // Play 4 frames once, 2s each, then back to idle
+      var doneIdx = 0;
+      showPetFrame(keys[0], 'draw-stroke-slow');
+      petAnimTimer = setInterval(function() {
+        doneIdx++;
+        if (doneIdx >= keys.length) {
+          clearInterval(petAnimTimer);
+          petAnimTimer = null;
+          setTimeout(function() { startPetAnim('idle'); }, 2000);
+          return;
+        }
+        showPetFrame(keys[doneIdx], 'draw-stroke-slow');
+      }, 2000);
+    }
+  }
+
+  function stopPetAnim() {
+    if (petAnimTimer) { clearInterval(petAnimTimer); petAnimTimer = null; }
+    if (petIdleRedrawTimer) { clearInterval(petIdleRedrawTimer); petIdleRedrawTimer = null; }
+  }
+
+  // Glow Pulse: read @property vars → apply box-shadow
+  function updateGlow() {
+    if (!isRunning) { glowRAF = null; return; }
+    var cs = getComputedStyle(capsule);
+    var hue = parseFloat(cs.getPropertyValue('--glow-hue')) || 220;
+    var intensity = parseFloat(cs.getPropertyValue('--glow-intensity')) || 0.3;
+
+    var c1 = 'hsla(' + hue + ',80%,70%,' + (intensity * 0.8) + ')';
+    var c2 = 'hsla(' + hue + ',75%,65%,' + (intensity * 0.5) + ')';
+    var c3 = 'hsla(' + hue + ',65%,60%,' + (intensity * 0.25) + ')';
+
+    capsule.style.boxShadow = [
+      '0 0 ' + (5 + intensity * 10) + 'px ' + (2 + intensity * 4) + 'px ' + c1,
+      '0 0 ' + (12 + intensity * 20) + 'px ' + (5 + intensity * 8) + 'px ' + c2,
+      '0 0 ' + (24 + intensity * 36) + 'px ' + (10 + intensity * 16) + 'px ' + c3,
+      'inset 0 0 ' + (5 + intensity * 8) + 'px ' + (2 + intensity * 3) + 'px ' + c1
+    ].join(', ');
+
+    glowRAF = requestAnimationFrame(updateGlow);
+  }
+
+  window.auroraBridge = {
+    setOrientation: function(orient) {
+      // Preserve idle/running state when changing orientation
+      var isRunState = document.body.classList.contains('running');
+      document.body.className = orient + ' ' + (isRunState ? 'running' : 'idle');
+      // Update pet orientation
+      petEl.classList.remove('vertical', 'horizontal');
+      petEl.classList.add(orient);
+    },
+
+    setState: function(state) {
+      if (state === 'running') {
+        isRunning = true;
+        capsule.classList.add('running');
+        capsule.classList.remove('idle');
+        document.body.classList.add('running');
+        document.body.classList.remove('idle');
+        if (currentMode === 'aurora') {
+          if (!glowRAF) glowRAF = requestAnimationFrame(updateGlow);
+        } else {
+          startPetAnim('thinking');
+        }
+      } else {
+        isRunning = false;
+        capsule.classList.remove('running');
+        capsule.classList.add('idle');
+        document.body.classList.remove('running');
+        document.body.classList.add('idle');
+        capsule.style.boxShadow = 'none';
+        if (currentMode === 'pet') {
+          startPetAnim('idle');
+        }
+      }
+    },
+
+    flashDone: function() {
+      if (currentMode === 'aurora') {
+        if (doneTimer) clearTimeout(doneTimer);
+        doneFlash.style.opacity = '1';
+        doneTimer = setTimeout(function() {
+          doneFlash.style.opacity = '0';
+          doneTimer = null;
+        }, 1000);
+      } else {
+        // Pet done animation — play once then back to idle
+        startPetAnim('done');
+        setTimeout(function() {
+          startPetAnim('idle');
+        }, 1200);
+      }
+    },
+
+    setMode: function(mode) {
+      currentMode = mode;
+      if (mode === 'pet') {
+        auroraEl.style.display = 'none';
+        petEl.style.display = 'flex';
+        capsule.style.boxShadow = 'none';
+        startPetAnim(isRunning ? 'thinking' : 'idle');
+      } else {
+        auroraEl.style.display = '';
+        petEl.style.display = 'none';
+        stopPetAnim();
+        if (isRunning && !glowRAF) glowRAF = requestAnimationFrame(updateGlow);
+      }
+    },
+
+    pause: function() {
+      document.body.style.animationPlayState = 'paused';
+      var blobs = document.querySelectorAll('.blob');
+      for (var i = 0; i < blobs.length; i++) blobs[i].style.animationPlayState = 'paused';
+      if (isRunning) { isRunning = false; capsule.style.boxShadow = 'none'; }
+    },
+
+    resume: function() {
+      document.body.style.animationPlayState = '';
+      var blobs = document.querySelectorAll('.blob');
+      for (var i = 0; i < blobs.length; i++) blobs[i].style.animationPlayState = '';
+    }
+  };
+})();
+</script>
+</body>
+</html>
