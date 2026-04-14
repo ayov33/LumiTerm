@@ -33,20 +33,19 @@ A lightweight floating terminal for macOS that stays out of your way until you n
 
 ## Install
 
+### Download (recommended)
+
+Download the latest `.app` from [GitHub Releases](https://github.com/ayov33/LumiTerm/releases), unzip, and drag to Applications.
+
+> First launch: right-click → Open (unsigned app, macOS will ask for confirmation once).
+
 ### Build from source
 
 ```bash
 git clone https://github.com/ayov33/LumiTerm.git
 cd LumiTerm
-swift build -c release
-```
-
-The binary will be at `.build/release/LumiTerm`.
-
-### Run directly
-
-```bash
-swift run
+bash scripts/package.sh    # builds and creates dist/LumiTerm.app
+open dist/LumiTerm.app
 ```
 
 ## Usage
@@ -117,10 +116,14 @@ Sources/
 
 ### 安装
 
+从 [GitHub Releases](https://github.com/ayov33/LumiTerm/releases) 下载 `.app`，解压即用。
+
+或源码编译：
 ```bash
 git clone https://github.com/ayov33/LumiTerm.git
 cd LumiTerm
-swift run
+bash scripts/package.sh
+open dist/LumiTerm.app
 ```
 
-需要 macOS 13+ 和 Swift 5.9+。
+需要 macOS 13+。
