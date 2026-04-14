@@ -51,7 +51,8 @@ class PTY {
             let cEnv = env.map { strdup($0) } + [nil]
             var mArgs = cArgs
             var mEnv = cEnv
-            execve(shell, &mArgs, &mEnv)
+            let cPath = strdup(shell)
+            execve(cPath, &mArgs, &mEnv)
             _exit(127)
         }
 

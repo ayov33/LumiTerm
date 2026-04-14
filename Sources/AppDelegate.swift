@@ -308,6 +308,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func handleHotkey(_ event: NSEvent) {
+        guard !UserDefaults.standard.bool(forKey: "hotkeyDisabled") else { return }
         guard isHotkey(event) else { return }
         stateManager.toggle()
     }
