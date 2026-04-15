@@ -49,7 +49,9 @@ class StatusBarView: NSView {
             withExtension: "html",
             subdirectory: "Resources/terminal"
         ) else {
+            #if DEBUG
             print("[Aurora] aurora.html not found")
+            #endif
             return
         }
         let dir = url.deletingLastPathComponent()

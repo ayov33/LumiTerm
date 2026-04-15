@@ -32,9 +32,11 @@ class TerminalViewController: NSViewController {
         webView.setValue(false, forKey: "drawsBackground")
         webView.navigationDelegate = self
 
+        #if DEBUG
         if #available(macOS 13.3, *) {
             webView.isInspectable = true
         }
+        #endif
         view.addSubview(webView)
 
         loadTerminalHTML()
@@ -46,7 +48,9 @@ class TerminalViewController: NSViewController {
             withExtension: "html",
             subdirectory: "Resources/terminal"
         ) else {
+            #if DEBUG
             print("[Terminal] terminal.html not found")
+            #endif
             return
         }
         let dir = resourceURL.deletingLastPathComponent()
@@ -160,7 +164,9 @@ class TerminalViewController: NSViewController {
         let b64 = buffer.base64EncodedString()
         outputBuffers[tabId] = Data()
         webView.evaluateJavaScript("termManager.writeBase64('\(tabId)', '\(b64)');") { _, error in
+            #if DEBUG
             if let error = error { print("[Terminal] JS error: \(error)") }
+            #endif
         }
     }
 
