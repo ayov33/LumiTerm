@@ -187,7 +187,7 @@ class SettingsWindowController: NSWindowController {
                     NSColor(red: 0.039, green: 0.518, blue: 1.0, alpha: 1.0),
                     NSColor(red: 0.749, green: 0.353, blue: 0.949, alpha: 1.0),
                     NSColor(red: 0.486, green: 0.686, blue: 0.761, alpha: 1.0),
-                    NSColor(red: 0.969, green: 0.969, blue: 0.969, alpha: 1.0)
+                    NSColor(red: 0.969, green: 0.973, blue: 0.973, alpha: 1.0)
                 ]
             ),
             ThemeDef(
@@ -203,7 +203,7 @@ class SettingsWindowController: NSWindowController {
                     NSColor(red: 0.478, green: 0.635, blue: 0.969, alpha: 1.0),
                     NSColor(red: 0.733, green: 0.604, blue: 0.969, alpha: 1.0),
                     NSColor(red: 0.490, green: 0.812, blue: 1.0, alpha: 1.0),
-                    NSColor(red: 0.753, green: 0.773, blue: 0.847, alpha: 1.0)
+                    NSColor(red: 0.663, green: 0.694, blue: 0.839, alpha: 1.0)
                 ]
             ),
             ThemeDef(
