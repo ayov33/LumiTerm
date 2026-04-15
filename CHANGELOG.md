@@ -1,5 +1,13 @@
 # Changelog
 
+## v1.9.0 (2026-04-15)
+
+- Terminal theme selection: Default, Tokyo Night, Catppuccin Mocha
+- Settings > Appearance: theme preview cards with radio button selection
+- Theme applies to all tabs in real-time, panel background tint adapts
+- New `ThemeRadioButton` custom control
+- Theme preference persisted to UserDefaults
+
 ## v1.8.0 (2026-04-15)
 
 - Ad-hoc code signing in package.sh (reduces macOS Gatekeeper warnings)
