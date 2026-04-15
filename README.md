@@ -1,17 +1,30 @@
 # LumiTerm
 
-A lightweight floating terminal for macOS that stays out of your way until you need it.
+**Your terminal, always one hover away.**
 
-**LumiTerm** is a floating terminal companion designed for designers, PMs, and anyone who switches between full-screen apps and the command line. It docks to your screen edge, expands on hover, and quietly notifies you when tasks complete.
+[![GitHub release](https://img.shields.io/github/v/release/ayov33/LumiTerm)](https://github.com/ayov33/LumiTerm/releases)
+[![Downloads](https://img.shields.io/github/downloads/ayov33/LumiTerm/total)](https://github.com/ayov33/LumiTerm/releases)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![macOS 13+](https://img.shields.io/badge/macOS-13%2B-black)](https://github.com/ayov33/LumiTerm)
+
+A floating terminal for macOS that docks to your screen edge, expands on hover, and disappears when you don't need it. Built for designers, PMs, and anyone who uses the command line without wanting it to take over their screen.
 
 > **[中文介绍](#中文介绍)**
 
+<p align="center">
+  <img src="assets/demo.gif" width="600" alt="LumiTerm demo — hover to expand, move away to collapse">
+  <br><em>Hover the edge. Terminal appears. Move away. It's gone.</em>
+</p>
+
+<details>
+<summary>Screenshots</summary>
 <p align="center">
   <img src="assets/screenshot-expanded.png" width="600" alt="LumiTerm expanded terminal">
   <br>
   <img src="assets/screenshot-collapsed-1.png" width="290" alt="LumiTerm collapsed state">
   <img src="assets/screenshot-collapsed-2.png" width="290" alt="LumiTerm capsule on desktop">
 </p>
+</details>
 
 ---
 
