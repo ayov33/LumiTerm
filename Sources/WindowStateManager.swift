@@ -160,8 +160,4 @@ class WindowStateManager {
             return NSRect(x: cx, y: sf.minY, width: pw, height: horizHeight)
         }
     }
-
-    func collapsedVisibleRect() -> NSRect {
-        return collapsedFrame()
-    }
 }

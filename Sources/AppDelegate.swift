@@ -111,7 +111,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         edgeMonitor.panelFrameProvider = { [weak self] in
             guard let self = self else { return .zero }
             return self.stateManager.state == .collapsed
-                ? self.stateManager.collapsedVisibleRect()
+                ? self.stateManager.collapsedFrame()
                 : self.panel.frame
         }
         edgeMonitor.stateProvider = { [weak self] in

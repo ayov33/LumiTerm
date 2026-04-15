@@ -35,6 +35,9 @@ if [ -f "AppIcon.icns" ]; then
     cp AppIcon.icns "$APP_DIR/Contents/Resources/"
 fi
 
+echo "==> Ad-hoc code signing..."
+codesign --force --deep --sign - "$APP_DIR"
+
 echo "==> Creating zip..."
 cd "$DIST_DIR"
 zip -r -q -y "$APP_NAME-macos.zip" "$APP_NAME.app"
