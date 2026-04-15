@@ -36,7 +36,10 @@ if [ -f "AppIcon.icns" ]; then
 fi
 
 echo "==> Ad-hoc code signing..."
+# Remove top-level symlink before signing (unsealed content), re-add after
+rm -f "$APP_DIR/$BUNDLE_NAME"
 codesign --force --deep --sign - "$APP_DIR"
+ln -s "Contents/Resources/$BUNDLE_NAME" "$APP_DIR/$BUNDLE_NAME"
 
 echo "==> Creating zip..."
 cd "$DIST_DIR"
