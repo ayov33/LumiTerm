@@ -21,10 +21,30 @@ A lightweight floating terminal for macOS that stays out of your way until you n
 - **Edge docking** — snap to any screen edge (top, bottom, left, right) with drag-and-drop
 - **Collapsed status bar** — see terminal state (Running / Idle / Done) at a glance, even when collapsed
 - **Ripple notification** — a subtle glow animation when your command finishes, no disruptive system alerts
-- **Multi-tab** — up to 3 terminal tabs with rename support (double-click to rename)
+- **Multi-tab** — up to 5 terminal tabs with rename support (Cmd+1~5 to switch)
 - **Global hotkey** — double-tap `Right Option` to toggle from anywhere (pinned mode)
+- **3 color themes** — Default, Tokyo Night, Catppuccin Mocha — switch in Settings
 - **Native performance** — built with Swift + AppKit, terminal powered by xterm.js via WKWebView
 - **Transparent & minimal** — semi-transparent panel with aurora/pixel-pet animations in collapsed mode
+
+## Why LumiTerm?
+
+Most terminals are built for developers. LumiTerm is built for everyone who uses the command line but doesn't want it taking over their screen.
+
+| Feature | LumiTerm | iTerm2 Visor | Ghostty Quick | Warp |
+|---------|:--------:|:------------:|:-------------:|:----:|
+| Hover to expand (zero-click) | **Yes** | No | No | No |
+| Collapsed status bar | **Yes** | No | No | No |
+| Command completion notification | **Ripple glow** | No | No | Toast |
+| Edge docking (all 4 sides) | **Yes** | Top only | Top only | No |
+| Color themes | **3 built-in** | Many | Limited | Many |
+| Aurora / Pixel Pet animations | **Yes** | No | No | No |
+| Semi-transparent panel | **Yes** | Yes | No | No |
+| Zero config needed | **Yes** | Needs setup | Needs config | Account required |
+| App size | **~1 MB** | ~30 MB | ~15 MB | ~90 MB |
+| Open source | **MIT** | GPL-2.0 | MIT | Proprietary |
+
+**LumiTerm's sweet spot:** You're in Figma / Notion / a browser full-screen, you need to run a quick command, and you don't want to Cmd+Tab away. Just hover the edge — the terminal is there. Move your mouse back — it's gone.
 
 ## Requirements
 
@@ -115,13 +135,23 @@ Zero Swift package dependencies. Terminal rendering via xterm.js in WKWebView.
 - **边缘吸附** — 拖拽到屏幕任意边缘（上/下/左/右）自动吸附
 - **折叠状态栏** — 收起时仍可看到终端状态（运行中/空闲/完成）
 - **涟漪通知** — 命令完成时以柔和光晕动画提醒，不打断工作流
-- **多标签页** — 最多 3 个终端标签，双击可重命名
+- **多标签页** — 最多 5 个终端标签，Cmd+1~5 切换
 - **全局热键** — 双击右侧 `Option` 键随时唤出并固定
+- **3 套配色主题** — Default / Tokyo Night / Catppuccin Mocha
 - **原生性能** — Swift + AppKit 构建，xterm.js 渲染终端
 
-### 目标用户
+### 为什么选 LumiTerm？
 
-不只是程序员的终端，而是所有在乎体验的人的终端 — 设计师、PM、创意工作者、前端开发者。
+| 功能 | LumiTerm | iTerm2 Visor | Ghostty Quick | Warp |
+|------|:--------:|:------------:|:-------------:|:----:|
+| 悬停展开（零点击） | **有** | 无 | 无 | 无 |
+| 折叠状态栏 | **有** | 无 | 无 | 无 |
+| 命令完成通知 | **涟漪动效** | 无 | 无 | Toast |
+| 四边停靠 | **有** | 仅顶部 | 仅顶部 | 无 |
+| 零配置即用 | **是** | 需设置 | 需配置 | 需注册 |
+| 体积 | **~1 MB** | ~30 MB | ~15 MB | ~90 MB |
+
+**使用场景：** 你在 Figma / Notion / 浏览器里全屏工作，需要跑个命令——鼠标移到边缘，终端就在那里；鼠标移走，它就消失。
 
 ### 安装
 
