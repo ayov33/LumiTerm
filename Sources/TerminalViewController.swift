@@ -91,6 +91,13 @@ class TerminalViewController: NSViewController {
         webView.evaluateJavaScript("termManager.setBackgroundOpacity(\(opacity));", completionHandler: nil)
     }
 
+    /// Change terminal color theme
+    func setTheme(_ name: String) {
+        guard htmlReady else { return }
+        let escaped = name.replacingOccurrences(of: "'", with: "\\'")
+        webView.evaluateJavaScript("termManager.setTheme('\(escaped)');", completionHandler: nil)
+    }
+
     /// Create a new tab via JS
     func createTab() {
         guard htmlReady else { return }

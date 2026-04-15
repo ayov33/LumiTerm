@@ -267,6 +267,44 @@ class CustomStepper: NSView {
     }
 }
 
+// MARK: - Theme Radio Button (16×16, circle outline, filled when selected)
+
+class ThemeRadioButton: NSView {
+    var isSelected: Bool
+    var themeKey: String = ""
+    var onSelect: ((String) -> Void)?
+
+    init(frame: NSRect, isSelected: Bool) {
+        self.isSelected = isSelected
+        super.init(frame: frame)
+    }
+    required init?(coder: NSCoder) { fatalError() }
+
+    override func draw(_ dirtyRect: NSRect) {
+        guard let ctx = NSGraphicsContext.current?.cgContext else { return }
+        let r = bounds.insetBy(dx: 1, dy: 1)
+
+        if isSelected {
+            // Filled dark circle
+            ctx.setFillColor(NSColor.black.cgColor)
+            ctx.fillEllipse(in: r)
+            // White inner dot
+            let inner = r.insetBy(dx: 4, dy: 4)
+            ctx.setFillColor(NSColor.white.cgColor)
+            ctx.fillEllipse(in: inner)
+        } else {
+            // Empty circle with border
+            ctx.setStrokeColor(NSColor(white: 0.7, alpha: 1).cgColor)
+            ctx.setLineWidth(1.5)
+            ctx.strokeEllipse(in: r)
+        }
+    }
+
+    override func mouseDown(with event: NSEvent) {
+        onSelect?(themeKey)
+    }
+}
+
 // MARK: - Lumi Logo View (white bg + L gradient)
 
 class LumiLogoView: NSView {

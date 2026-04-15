@@ -164,6 +164,45 @@
   var nextId = 1;
   var defaultTitle = '';  // Set by Swift (Claude Code version)
 
+  var THEMES = {
+    'default': {
+      background: 'transparent', foreground: '#D8D8D8', cursor: '#7CAFC2', cursorAccent: 'transparent',
+      selectionBackground: 'rgba(108, 126, 230, 0.3)', selectionForeground: '#F7F8F8',
+      black: '#000000', red: '#FF453A', green: '#30D158', yellow: '#FF9F0A',
+      blue: '#0A84FF', magenta: '#BF5AF2', cyan: '#7CAFC2', white: '#D8D8D8',
+      brightBlack: '#666666', brightRed: '#FF6961', brightGreen: '#4CD964',
+      brightYellow: '#FFD60A', brightBlue: '#64D2FF', brightMagenta: '#DA8FFF',
+      brightCyan: '#A8D8EA', brightWhite: '#F7F8F8'
+    },
+    tokyoNight: {
+      background: 'transparent', foreground: '#a9b1d6', cursor: '#7aa2f7', cursorAccent: 'transparent',
+      selectionBackground: 'rgba(40, 44, 70, 0.6)', selectionForeground: '#c0caf5',
+      black: '#15161e', red: '#f7768e', green: '#9ece6a', yellow: '#e0af68',
+      blue: '#7aa2f7', magenta: '#bb9af7', cyan: '#7dcfff', white: '#a9b1d6',
+      brightBlack: '#414868', brightRed: '#f7768e', brightGreen: '#9ece6a',
+      brightYellow: '#e0af68', brightBlue: '#7aa2f7', brightMagenta: '#bb9af7',
+      brightCyan: '#7dcfff', brightWhite: '#c0caf5'
+    },
+    catppuccin: {
+      background: 'transparent', foreground: '#cdd6f4', cursor: '#f5e0dc', cursorAccent: 'transparent',
+      selectionBackground: 'rgba(88, 91, 112, 0.5)', selectionForeground: '#cdd6f4',
+      black: '#45475a', red: '#f38ba8', green: '#a6e3a1', yellow: '#f9e2af',
+      blue: '#89b4fa', magenta: '#cba6f7', cyan: '#94e2d5', white: '#bac2de',
+      brightBlack: '#585b70', brightRed: '#f38ba8', brightGreen: '#a6e3a1',
+      brightYellow: '#f9e2af', brightBlue: '#89b4fa', brightMagenta: '#cba6f7',
+      brightCyan: '#94e2d5', brightWhite: '#a6adc8'
+    }
+  };
+
+  var THEME_BACKGROUNDS = {
+    'default':    'rgba(20, 20, 22, ',
+    tokyoNight:   'rgba(26, 27, 38, ',
+    catppuccin:   'rgba(30, 30, 46, '
+  };
+
+  var currentThemeName = 'default';
+  var currentOpacity = 0.60;
+
   var termConfig = {
     fontFamily: 'Menlo, "SF Mono", Monaco, monospace',
     fontSize: 13,
@@ -171,19 +210,7 @@
     cursorStyle: 'bar',
     cursorBlink: false,
     allowTransparency: true,
-    theme: {
-      background: 'transparent',
-      foreground: '#D8D8D8',
-      cursor: '#7CAFC2',
-      cursorAccent: 'transparent',
-      selectionBackground: 'rgba(108, 126, 230, 0.3)',
-      selectionForeground: '#F7F8F8',
-      black: '#000000', red: '#FF453A', green: '#30D158', yellow: '#FF9F0A',
-      blue: '#0A84FF', magenta: '#BF5AF2', cyan: '#7CAFC2', white: '#D8D8D8',
-      brightBlack: '#666666', brightRed: '#FF6961', brightGreen: '#4CD964',
-      brightYellow: '#FFD60A', brightBlue: '#64D2FF', brightMagenta: '#DA8FFF',
-      brightCyan: '#A8D8EA', brightWhite: '#F7F8F8'
-    },
+    theme: THEMES['default'],
     scrollback: 5000,
     macOptionIsMeta: true,
     macOptionClickForcesSelection: true,
@@ -450,7 +477,24 @@
     },
 
     setBackgroundOpacity: function(opacity) {
-      document.body.style.background = 'rgba(20, 20, 22, ' + opacity + ')';
+      currentOpacity = opacity;
+      var prefix = THEME_BACKGROUNDS[currentThemeName] || THEME_BACKGROUNDS['default'];
+      document.body.style.background = prefix + opacity + ')';
+    },
+
+    setTheme: function(name) {
+      if (!THEMES[name]) return;
+      currentThemeName = name;
+      // Update termConfig for new tabs
+      termConfig.theme = THEMES[name];
+      // Update all existing terminal instances
+      var ids = Object.keys(tabs);
+      for (var i = 0; i < ids.length; i++) {
+        tabs[ids[i]].term.options.theme = THEMES[name];
+      }
+      // Update body background with current opacity
+      var prefix = THEME_BACKGROUNDS[name] || THEME_BACKGROUNDS['default'];
+      document.body.style.background = prefix + currentOpacity + ')';
     },
 
     getActiveTabId: function() {

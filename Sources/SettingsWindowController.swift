@@ -25,7 +25,7 @@ class SettingsWindowController: NSWindowController {
 
     convenience init() {
         let window = NSWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 480, height: 280),
+            contentRect: NSRect(x: 0, y: 0, width: 480, height: 460),
             styleMask: [.titled, .closable],
             backing: .buffered, defer: false
         )
@@ -142,6 +142,190 @@ class SettingsWindowController: NSWindowController {
         y -= rowGap
 
         y = addCard("Font Size", control: makeFontSize(), w: w, y: y)
+        y -= rowGap
+
+        y = addThemeCard(w: w, y: y)
+    }
+
+    // MARK: - Theme Selector Card
+
+    private func addThemeCard(w: CGFloat, y: CGFloat) -> CGFloat {
+        let cardH: CGFloat = 172
+        let card = NSView(frame: NSRect(x: 0, y: y - cardH, width: w, height: cardH))
+        card.wantsLayer = true
+        card.layer?.backgroundColor = cardColor.cgColor
+        card.layer?.cornerRadius = cardRadius
+        sectionContainer.addSubview(card)
+
+        // "Theme" label at top-left
+        let titleLabel = makeLabel("Theme", font: labelFont)
+        titleLabel.frame.origin = NSPoint(x: rowPadX, y: cardH - 12 - titleLabel.frame.height)
+        card.addSubview(titleLabel)
+
+        // Theme definitions for preview
+        struct ThemeDef {
+            let key: String
+            let name: String
+            let bgColor: NSColor
+            let fgColor: NSColor
+            let promptColor: NSColor   // for "claude" text
+            let pathColor: NSColor     // for "~project" text
+            let dotColors: [NSColor]
+        }
+
+        let themes: [ThemeDef] = [
+            ThemeDef(
+                key: "default", name: "Default",
+                bgColor: Theme.panelBgDefault,
+                fgColor: NSColor(red: 0.847, green: 0.847, blue: 0.847, alpha: 1.0),
+                promptColor: NSColor(red: 0.486, green: 0.686, blue: 0.761, alpha: 1.0),
+                pathColor: NSColor(red: 0.188, green: 0.820, blue: 0.345, alpha: 1.0),
+                dotColors: [
+                    NSColor(red: 1.0, green: 0.271, blue: 0.227, alpha: 1.0),
+                    NSColor(red: 0.188, green: 0.820, blue: 0.345, alpha: 1.0),
+                    NSColor(red: 1.0, green: 0.624, blue: 0.039, alpha: 1.0),
+                    NSColor(red: 0.039, green: 0.518, blue: 1.0, alpha: 1.0),
+                    NSColor(red: 0.749, green: 0.353, blue: 0.949, alpha: 1.0),
+                    NSColor(red: 0.486, green: 0.686, blue: 0.761, alpha: 1.0),
+                    NSColor(red: 0.969, green: 0.969, blue: 0.969, alpha: 1.0)
+                ]
+            ),
+            ThemeDef(
+                key: "tokyoNight", name: "Tokyo Night",
+                bgColor: Theme.panelBgTokyoNight,
+                fgColor: NSColor(red: 0.663, green: 0.694, blue: 0.839, alpha: 1.0),
+                promptColor: NSColor(red: 0.478, green: 0.635, blue: 0.969, alpha: 1.0),
+                pathColor: NSColor(red: 0.620, green: 0.808, blue: 0.416, alpha: 1.0),
+                dotColors: [
+                    NSColor(red: 0.969, green: 0.463, blue: 0.557, alpha: 1.0),
+                    NSColor(red: 0.620, green: 0.808, blue: 0.416, alpha: 1.0),
+                    NSColor(red: 0.878, green: 0.686, blue: 0.408, alpha: 1.0),
+                    NSColor(red: 0.478, green: 0.635, blue: 0.969, alpha: 1.0),
+                    NSColor(red: 0.733, green: 0.604, blue: 0.969, alpha: 1.0),
+                    NSColor(red: 0.490, green: 0.812, blue: 1.0, alpha: 1.0),
+                    NSColor(red: 0.753, green: 0.773, blue: 0.847, alpha: 1.0)
+                ]
+            ),
+            ThemeDef(
+                key: "catppuccin", name: "Catppuccin",
+                bgColor: Theme.panelBgCatppuccin,
+                fgColor: NSColor(red: 0.804, green: 0.839, blue: 0.957, alpha: 1.0),
+                promptColor: NSColor(red: 0.537, green: 0.706, blue: 0.980, alpha: 1.0),
+                pathColor: NSColor(red: 0.651, green: 0.890, blue: 0.631, alpha: 1.0),
+                dotColors: [
+                    NSColor(red: 0.953, green: 0.545, blue: 0.659, alpha: 1.0),
+                    NSColor(red: 0.651, green: 0.890, blue: 0.631, alpha: 1.0),
+                    NSColor(red: 0.976, green: 0.886, blue: 0.686, alpha: 1.0),
+                    NSColor(red: 0.537, green: 0.706, blue: 0.980, alpha: 1.0),
+                    NSColor(red: 0.796, green: 0.651, blue: 0.969, alpha: 1.0),
+                    NSColor(red: 0.580, green: 0.886, blue: 0.835, alpha: 1.0),
+                    NSColor(red: 0.729, green: 0.761, blue: 0.871, alpha: 1.0)
+                ]
+            )
+        ]
+
+        let savedTheme = UserDefaults.standard.string(forKey: "terminalTheme") ?? "default"
+        let previewGap: CGFloat = 8
+        let previewW = (w - rowPadX * 2 - previewGap * 2) / 3
+        let previewH: CGFloat = 64
+        let previewY = cardH - 12 - titleLabel.frame.height - 8 - previewH
+        let dotsY = previewY - 16
+        let radioY = dotsY - 22
+
+        var radioButtons: [ThemeRadioButton] = []
+
+        for (i, theme) in themes.enumerated() {
+            let px = rowPadX + CGFloat(i) * (previewW + previewGap)
+
+            // Mini preview background
+            let preview = NSView(frame: NSRect(x: px, y: previewY, width: previewW, height: previewH))
+            preview.wantsLayer = true
+            preview.layer?.backgroundColor = theme.bgColor.cgColor
+            preview.layer?.cornerRadius = 6
+            card.addSubview(preview)
+
+            // Colored prompt text: "user@:~project $" in theme colors
+            let monoFont = NSFont(name: "Menlo", size: 8) ?? NSFont.monospacedSystemFont(ofSize: 8, weight: .regular)
+
+            let promptStr = NSMutableAttributedString()
+            promptStr.append(NSAttributedString(string: "user@", attributes: [
+                .font: monoFont, .foregroundColor: theme.fgColor
+            ]))
+            promptStr.append(NSAttributedString(string: ":~project", attributes: [
+                .font: monoFont, .foregroundColor: theme.pathColor
+            ]))
+            promptStr.append(NSAttributedString(string: " $ ", attributes: [
+                .font: monoFont, .foregroundColor: theme.fgColor
+            ]))
+            promptStr.append(NSAttributedString(string: "claude", attributes: [
+                .font: monoFont, .foregroundColor: theme.promptColor
+            ]))
+
+            let textField = NSTextField(labelWithAttributedString: promptStr)
+            textField.frame = NSRect(x: 8, y: previewH - 20, width: previewW - 16, height: 14)
+            textField.lineBreakMode = .byTruncatingTail
+            preview.addSubview(textField)
+
+            // Second line: cursor bar
+            let cursorLine = NSMutableAttributedString()
+            cursorLine.append(NSAttributedString(string: "> ", attributes: [
+                .font: monoFont, .foregroundColor: theme.fgColor.withAlphaComponent(0.5)
+            ]))
+            cursorLine.append(NSAttributedString(string: "|", attributes: [
+                .font: monoFont, .foregroundColor: theme.promptColor
+            ]))
+            let line2 = NSTextField(labelWithAttributedString: cursorLine)
+            line2.frame = NSRect(x: 8, y: previewH - 34, width: previewW - 16, height: 14)
+            preview.addSubview(line2)
+
+            // Color dots row
+            let dotSize: CGFloat = 7
+            let dotGap: CGFloat = 4
+            let totalDotsW = dotSize * CGFloat(theme.dotColors.count) + dotGap * CGFloat(theme.dotColors.count - 1)
+            let dotsStartX = px + (previewW - totalDotsW) / 2
+
+            for (di, color) in theme.dotColors.enumerated() {
+                let dot = NSView(frame: NSRect(
+                    x: dotsStartX + CGFloat(di) * (dotSize + dotGap),
+                    y: dotsY,
+                    width: dotSize, height: dotSize
+                ))
+                dot.wantsLayer = true
+                dot.layer?.backgroundColor = color.cgColor
+                dot.layer?.cornerRadius = dotSize / 2
+                card.addSubview(dot)
+            }
+
+            // Theme name label centered below dots
+            let nameLabel = NSTextField(labelWithString: theme.name)
+            nameLabel.font = NSFont(name: "Helvetica", size: 10) ?? NSFont.systemFont(ofSize: 10)
+            nameLabel.textColor = .secondaryLabelColor
+            nameLabel.sizeToFit()
+            nameLabel.frame.origin = NSPoint(
+                x: px + (previewW - nameLabel.frame.width) / 2,
+                y: radioY + 2
+            )
+            card.addSubview(nameLabel)
+
+            // Radio button
+            let radio = ThemeRadioButton(
+                frame: NSRect(x: px + (previewW - 16) / 2, y: radioY - 18, width: 16, height: 16),
+                isSelected: theme.key == savedTheme
+            )
+            radio.themeKey = theme.key
+            radio.onSelect = { key in
+                UserDefaults.standard.set(key, forKey: "terminalTheme")
+                NotificationCenter.default.post(name: .settingsChanged, object: nil)
+                for rb in radioButtons {
+                    rb.isSelected = (rb.themeKey == key)
+                    rb.needsDisplay = true
+                }
+            }
+            card.addSubview(radio)
+            radioButtons.append(radio)
+        }
+
+        return y - cardH
     }
 
     // MARK: - Notifications

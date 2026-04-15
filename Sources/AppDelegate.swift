@@ -287,6 +287,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     // MARK: - Apply Settings
 
     private func applySettings() {
+        // Terminal color theme
+        let theme = UserDefaults.standard.string(forKey: "terminalTheme") ?? "default"
+        terminalVC.setTheme(theme)
+
         // Panel background opacity — controlled via HTML body background only
         let opacity = UserDefaults.standard.float(forKey: "panelOpacity")
         if opacity > 0 {
