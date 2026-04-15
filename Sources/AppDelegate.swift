@@ -202,7 +202,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             }
         }
 
-        // 9. Hotkeys
+        // 10. Hotkeys
         globalHotkeyMonitor = NSEvent.addGlobalMonitorForEvents(matching: .keyDown) { [weak self] event in
             self?.handleHotkey(event)
         }
@@ -226,11 +226,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             return event
         }
 
-        // 10. Menu bar + edit menu
+        // 11. Menu bar + edit menu
         setupStatusItem()
         setupEditMenu()
 
-        // 11. Initial state
+        // 12. Initial state
         panel.alphaValue = 1.0
         stateManager.setupInitial()
         applySettings()
@@ -289,9 +289,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     private func applySettings() {
         // Panel background opacity first (so theme can use correct opacity)
         let opacity = UserDefaults.standard.float(forKey: "panelOpacity")
-        if opacity > 0 {
-            terminalVC.setBackgroundOpacity(opacity)
-        }
+        terminalVC.setBackgroundOpacity(opacity > 0 ? opacity : Theme.defaultOpacity)
 
         // Terminal color theme (uses currentOpacity set above)
         let theme = UserDefaults.standard.string(forKey: "terminalTheme") ?? "default"

@@ -133,7 +133,7 @@ class SettingsWindowController: NSWindowController {
         y -= rowGap
 
         let op = UserDefaults.standard.float(forKey: "panelOpacity")
-        let sl = CustomSlider(value: Double(op == 0 ? 0.6 : op), min: 0.3, max: 1.0)
+        let sl = CustomSlider(value: Double(op > 0 ? op : Theme.defaultOpacity), min: 0.3, max: 1.0)
         sl.onChange = { v in
             UserDefaults.standard.set(Float(v), forKey: "panelOpacity")
             NotificationCenter.default.post(name: .settingsChanged, object: nil)

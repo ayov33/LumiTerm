@@ -73,7 +73,8 @@ class StatusBarView: NSView {
 
     func setOrientation(_ orient: String) {
         guard htmlLoaded else { return }
-        webView.evaluateJavaScript("window.auroraBridge.setOrientation('\(orient)');", completionHandler: nil)
+        let safe = orient.replacingOccurrences(of: "'", with: "\\'")
+        webView.evaluateJavaScript("window.auroraBridge.setOrientation('\(safe)');", completionHandler: nil)
     }
 
     func flashDone() {
@@ -82,8 +83,9 @@ class StatusBarView: NSView {
     }
 
     func setMode(_ mode: String) {
+        let safe = mode.replacingOccurrences(of: "'", with: "\\'")
         if htmlLoaded {
-            webView.evaluateJavaScript("window.auroraBridge.setMode('\(mode)');", completionHandler: nil)
+            webView.evaluateJavaScript("window.auroraBridge.setMode('\(safe)');", completionHandler: nil)
         } else {
             pendingMode = mode
         }

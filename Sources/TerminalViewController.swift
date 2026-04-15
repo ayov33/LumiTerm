@@ -179,6 +179,7 @@ class TerminalViewController: NSViewController {
             pty.onData = { [weak self] data in
                 self?.handlePTYOutput(tabId: tabId, data: data)
             }
+            // Closure-captured state for restart backoff (intentional — per-tab lifecycle)
             var restartCount = 0
             var lastRestartTime: Date = .distantPast
             pty.onExit = { [weak self] code in
