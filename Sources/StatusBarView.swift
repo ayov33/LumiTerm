@@ -93,14 +93,12 @@ class StatusBarView: NSView {
 
     func pauseAnimations() {
         guard htmlLoaded else { return }
-        // Unload WebView content to free resources while expanded
-        webView.loadHTMLString("", baseURL: nil)
-        htmlLoaded = false
+        webView.evaluateJavaScript("window.auroraBridge.pause();", completionHandler: nil)
     }
 
     func resumeAnimations() {
-        // Reload aurora HTML when collapsing back
-        loadAuroraHTML()
+        guard htmlLoaded else { return }
+        webView.evaluateJavaScript("window.auroraBridge.resume();", completionHandler: nil)
     }
 
     // MARK: - Mouse handling (drag through WKWebView)
