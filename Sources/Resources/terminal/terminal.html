@@ -10,17 +10,33 @@
     background: rgba(20, 20, 22, 0.60);
     overflow: hidden;
     font-family: -apple-system, sans-serif;
+    display: flex;
+    flex-direction: column;
+    transition: background 0.35s cubic-bezier(0.25, 1, 0.5, 1);
   }
 
   /* Tab bar */
   #tab-bar {
     height: 31px;
+    max-height: 31px;
     display: flex;
     align-items: center;
     gap: 4px;
     padding: 0 8px;
     border-bottom: 1px solid rgba(255,255,255,0.2);
     position: relative;
+    overflow: hidden;
+    opacity: 1;
+    transition: max-height 0.2s cubic-bezier(0.25, 1, 0.5, 1),
+                opacity 0.15s cubic-bezier(0.25, 1, 0.5, 1),
+                border-color 0.15s ease;
+  }
+  #tab-bar.hidden {
+    max-height: 0;
+    opacity: 0;
+    border-bottom-color: transparent;
+    padding-top: 0;
+    padding-bottom: 0;
   }
   .tab-btn {
     padding: 0 8px 0 14px;
@@ -40,10 +56,14 @@
     justify-content: center;
     line-height: 1;
     gap: 6px;
+    transition: color 0.15s ease, background 0.15s ease, transform 0.1s cubic-bezier(0.25, 1, 0.5, 1);
   }
   .tab-btn:hover {
     color: rgba(255,255,255,0.85);
     background: rgba(255,255,255,0.15);
+  }
+  .tab-btn:active {
+    transform: scale(0.95);
   }
   .tab-btn.active {
     color: rgba(255,255,255,0.9);
@@ -65,6 +85,9 @@
   .tab-close:hover {
     background: rgba(255,255,255,0.15);
     color: rgba(255,255,255,0.9);
+  }
+  .tab-close:active {
+    transform: scale(0.85);
   }
   .tab-btn.active .tab-close {
     display: flex;
@@ -106,10 +129,14 @@
     align-items: center;
     justify-content: center;
     line-height: 1;
+    transition: color 0.15s ease, background 0.15s ease, transform 0.1s cubic-bezier(0.25, 1, 0.5, 1);
   }
   #add-btn:hover {
     color: rgba(255,255,255,0.8);
     background: rgba(255,255,255,0.15);
+  }
+  #add-btn:active {
+    transform: scale(0.9);
   }
   #tab-logo {
     margin-left: auto;
@@ -123,17 +150,21 @@
   #terminals {
     position: relative;
     width: 100%;
-    height: calc(100% - 31px);
+    flex: 1;
+    min-height: 0;
   }
   .term-container {
     position: absolute;
     top: 0; left: 0; right: 0; bottom: 0;
     padding: 10px;
     box-sizing: border-box;
-    display: none;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.12s cubic-bezier(0.25, 1, 0.5, 1);
   }
   .term-container.active {
-    display: block;
+    opacity: 1;
+    visibility: visible;
   }
   .xterm { background: transparent !important; }
   .xterm-viewport {
@@ -142,11 +173,60 @@
   }
   .xterm-screen { background: transparent !important; }
   .xterm-viewport::-webkit-scrollbar { width: 0; height: 0; }
+
+  /* ─── Cursor Glow ─── */
+  .cursor-glow {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 100;
+    opacity: 0;
+    filter: blur(10px);
+    will-change: transform, opacity;
+  }
+
+  /* ─── Progress Light Strip ─── */
+  #progress-strip {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    z-index: 20;
+    overflow: hidden;
+    opacity: 0;
+    transition: opacity 0.35s cubic-bezier(0.25, 1, 0.5, 1);
+  }
+  #progress-strip.active {
+    opacity: 1;
+  }
+  #progress-strip-inner {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, #7CAFC2, #BF5AF2, transparent);
+    animation: strip-flow 1.8s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+  @keyframes strip-flow {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .cursor-glow { display: none; }
+    #progress-strip-inner { animation: none; opacity: 0.6; transform: none; }
+  }
 </style>
 </head>
 <body>
 
-<div id="tab-bar">
+<div id="tab-bar" class="hidden">
   <input id="rename-input" type="text" maxlength="20">
   <div id="add-btn">+</div>
   <svg id="tab-logo" viewBox="0 0 96 96" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -159,6 +239,7 @@
   </svg>
 </div>
 <div id="terminals"></div>
+<div id="progress-strip"><div id="progress-strip-inner"></div></div>
 
 <script src="xterm.js"></script>
 <script src="addon-fit.js"></script>
@@ -251,15 +332,12 @@
     }
 
     var bar = document.getElementById('tab-bar');
-    var termArea = document.getElementById('terminals');
 
-    // Hide tab bar when single tab
+    // Animate tab bar show/hide
     if (tabOrder.length <= 1) {
-      bar.style.display = 'none';
-      termArea.style.height = '100%';
+      bar.classList.add('hidden');
     } else {
-      bar.style.display = 'flex';
-      termArea.style.height = 'calc(100% - 31px)';
+      bar.classList.remove('hidden');
     }
 
     var oldBtns = bar.querySelectorAll('.tab-btn');
@@ -408,8 +486,23 @@
         postToSwift('bell', { tabId: id });
       });
 
-      tabs[id] = { id: id, term: term, fitAddon: fitAddon, containerEl: container, customTitle: null };
+      // Cursor glow element
+      var glowEl = document.createElement('div');
+      glowEl.className = 'cursor-glow';
+      glowEl.style.background = GLOW_COLORS[currentThemeName] || '#7CAFC2';
+      container.appendChild(glowEl);
+
+      tabs[id] = { id: id, term: term, fitAddon: fitAddon, containerEl: container, customTitle: null, glowEl: glowEl };
       tabOrder.push(id);
+
+      // Pulse glow on user typing
+      term.onData(function() {
+        glowPulse(id);
+      });
+      // Track cursor position for glow
+      term.onCursorMove(function() {
+        glowUpdatePos(id);
+      });
 
       this.switchTab(id);
       postToSwift('tabCreated', { tabId: id });
@@ -542,6 +635,133 @@
       try { tabs[activeTabId].fitAddon.fit(); } catch(e) {}
     }
   }).observe(document.getElementById('terminals'));
+
+  // ─── Cursor Glow Engine ───
+
+  var GLOW_COLORS = {
+    'default': '#7CAFC2', tokyoNight: '#7aa2f7', catppuccin: '#89b4fa'
+  };
+  var STRIP_GRADS = {
+    'default':    'linear-gradient(90deg, transparent, #7CAFC2, #BF5AF2, transparent)',
+    tokyoNight:   'linear-gradient(90deg, transparent, #7aa2f7, #bb9af7, transparent)',
+    catppuccin:   'linear-gradient(90deg, transparent, #89b4fa, #cba6f7, transparent)'
+  };
+
+  var glowLevel = 0;
+  var glowDecayRAF = null;
+
+  function glowGetCell(term) {
+    try { return term._core._renderService.dimensions.css.cell; } catch(e) {}
+    var fs = term.options.fontSize || 13;
+    return { width: fs * 0.6, height: fs * (term.options.lineHeight || 1.2) };
+  }
+
+  function glowUpdatePos(tabId) {
+    var tab = tabs[tabId];
+    if (!tab || !tab.glowEl) return;
+    var buf = tab.term.buffer.active;
+    var cell = glowGetCell(tab.term);
+    var px = 10 + (buf.cursorX + 0.5) * cell.width;
+    var py = 10 + (buf.cursorY + 0.5) * cell.height;
+    tab.glowEl.style.transform = 'translate(-50%, -50%) translate(' + px + 'px,' + py + 'px)';
+  }
+
+  function glowApply() {
+    if (!activeTabId || !tabs[activeTabId] || !tabs[activeTabId].glowEl) return;
+    var el = tabs[activeTabId].glowEl;
+    el.style.opacity = (0.12 + 0.28 * glowLevel).toFixed(3);
+    var size = 20 + 14 * glowLevel;
+    el.style.width = size + 'px';
+    el.style.height = size + 'px';
+  }
+
+  function glowPulse(tabId) {
+    glowLevel = Math.min(1.0, glowLevel + 0.4);
+    glowApply();
+    glowUpdatePos(tabId);
+    if (!glowDecayRAF) glowDecayRAF = requestAnimationFrame(glowDecay);
+  }
+
+  function glowDecay() {
+    glowDecayRAF = null;
+    glowLevel = Math.max(0, glowLevel - 0.012);
+    glowApply();
+    if (glowLevel > 0.001) {
+      glowDecayRAF = requestAnimationFrame(glowDecay);
+    } else {
+      glowLevel = 0;
+      if (activeTabId && tabs[activeTabId] && tabs[activeTabId].glowEl) {
+        tabs[activeTabId].glowEl.style.opacity = '0';
+      }
+    }
+  }
+
+  function glowUpdateAllColors() {
+    var color = GLOW_COLORS[currentThemeName] || GLOW_COLORS['default'];
+    var ids = Object.keys(tabs);
+    for (var i = 0; i < ids.length; i++) {
+      if (tabs[ids[i]].glowEl) tabs[ids[i]].glowEl.style.background = color;
+    }
+    var grad = STRIP_GRADS[currentThemeName] || STRIP_GRADS['default'];
+    document.getElementById('progress-strip-inner').style.background = grad;
+  }
+
+  // ─── Progress Strip ───
+
+  var stripEl = document.getElementById('progress-strip');
+  var stripOutputBytes = 0;
+  var stripIdleTimer = null;
+  var stripJsActive = false;
+  var stripSwiftActive = false;
+
+  function stripUpdate() {
+    if (stripSwiftActive || stripJsActive) {
+      stripEl.classList.add('active');
+    } else {
+      stripEl.classList.remove('active');
+    }
+  }
+
+  // ─── Extend termManager (no monkey-patching) ───
+
+  // setRunning: called from Swift OutputMonitor
+  window.termManager.setRunning = function(isRunning) {
+    stripSwiftActive = isRunning;
+    stripUpdate();
+  };
+
+  // Wrap writeBase64 to add glow + strip tracking
+  var _origWriteBase64 = window.termManager.writeBase64.bind(window.termManager);
+  window.termManager.writeBase64 = function(tabId, b64) {
+    _origWriteBase64(tabId, b64);
+
+    // Subtle glow on PTY output
+    if (tabId === activeTabId && glowLevel < 0.15) {
+      glowLevel = 0.15;
+      glowApply();
+      if (!glowDecayRAF) glowDecayRAF = requestAnimationFrame(glowDecay);
+    }
+
+    // JS-side strip detection
+    stripOutputBytes += b64.length;
+    if (stripOutputBytes > 500 && !stripJsActive) {
+      stripJsActive = true;
+      stripUpdate();
+    }
+    clearTimeout(stripIdleTimer);
+    stripIdleTimer = setTimeout(function() {
+      stripOutputBytes = 0;
+      stripJsActive = false;
+      stripUpdate();
+    }, 1500);
+  };
+
+  // Wrap setTheme to update glow + strip colors
+  var _origSetTheme = window.termManager.setTheme.bind(window.termManager);
+  window.termManager.setTheme = function(name) {
+    _origSetTheme(name);
+    glowUpdateAllColors();
+  };
 })();
 </script>
 </body>

@@ -65,6 +65,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         outputMonitor.onStatusChange = { [weak self] status in
             DispatchQueue.main.async {
                 self?.statusBar.updateStatus(status)
+                self?.terminalVC.setRunning(status == .running)
             }
         }
         outputMonitor.onCommandFinished = { [weak self] in

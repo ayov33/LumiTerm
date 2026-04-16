@@ -103,6 +103,8 @@ class PTY {
         dispatchIO?.close()
         dispatchIO = nil
         if pid > 0 { kill(pid, SIGTERM) }
+        pid = 0
+        masterFd = -1
         processMonitor?.cancel()
         processMonitor = nil
     }

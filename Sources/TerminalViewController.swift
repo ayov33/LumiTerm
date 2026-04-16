@@ -102,6 +102,12 @@ class TerminalViewController: NSViewController {
         webView.evaluateJavaScript("termManager.setTheme('\(escaped)');", completionHandler: nil)
     }
 
+    /// Show/hide progress light strip (command running indicator)
+    func setRunning(_ running: Bool) {
+        guard htmlReady else { return }
+        webView.evaluateJavaScript("termManager.setRunning(\(running));", completionHandler: nil)
+    }
+
     /// Create a new tab via JS
     func createTab() {
         guard htmlReady else { return }

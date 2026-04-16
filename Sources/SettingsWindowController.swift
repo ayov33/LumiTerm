@@ -83,7 +83,19 @@ class SettingsWindowController: NSWindowController {
 
     private func showTab(_ idx: Int) {
         currentTab = idx
-        for (i, l) in tabLabels.enumerated() { l.alphaValue = (i == idx) ? 1.0 : 0.4 }
+
+        // Animate tab label opacity
+        NSAnimationContext.runAnimationGroup { ctx in
+            ctx.duration = 0.15
+            ctx.timingFunction = CAMediaTimingFunction(name: .easeOut)
+            for (i, l) in tabLabels.enumerated() {
+                l.animator().alphaValue = (i == idx) ? 1.0 : 0.4
+            }
+        }
+
+        // Crossfade section content
+        let oldAlpha = sectionContainer.alphaValue
+        sectionContainer.alphaValue = 0
         sectionContainer.subviews.forEach { $0.removeFromSuperview() }
         switch idx {
         case 0: buildGeneral()
@@ -91,6 +103,12 @@ class SettingsWindowController: NSWindowController {
         case 2: buildNotifications()
         case 3: buildAbout()
         default: break
+        }
+        // Fade in new content
+        NSAnimationContext.runAnimationGroup { ctx in
+            ctx.duration = 0.18
+            ctx.timingFunction = CAMediaTimingFunction(name: .easeOut)
+            sectionContainer.animator().alphaValue = oldAlpha > 0 ? oldAlpha : 1.0
         }
     }
 
@@ -318,7 +336,6 @@ class SettingsWindowController: NSWindowController {
                 NotificationCenter.default.post(name: .settingsChanged, object: nil)
                 for rb in radioButtons {
                     rb.isSelected = (rb.themeKey == key)
-                    rb.needsDisplay = true
                 }
             }
             card.addSubview(radio)
@@ -440,7 +457,6 @@ class SettingsWindowController: NSWindowController {
                 NotificationCenter.default.post(name: .dockEdgeChanged, object: nil, userInfo: ["edge": edge])
                 for case let b as CustomDockButton in container.subviews {
                     b.isSelected = (edges[b.buttonTag] == edge)
-                    b.needsDisplay = true
                 }
             }
             container.addSubview(btn)

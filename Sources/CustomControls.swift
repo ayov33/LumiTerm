@@ -28,11 +28,30 @@ class CustomSwitch: NSView {
 
     override func mouseDown(with event: NSEvent) {
         isOn.toggle()
-        NSAnimationContext.runAnimationGroup { ctx in
-            ctx.duration = 0.15
-            self.knob.animator().frame.origin.x = self.isOn ? 22 : 2
-        }
+
+        // Animate knob position with overshoot
+        let targetX: CGFloat = isOn ? 22 : 2
+        let overshoot: CGFloat = isOn ? 24 : 0
+
+        NSAnimationContext.runAnimationGroup({ ctx in
+            ctx.duration = 0.12
+            ctx.timingFunction = CAMediaTimingFunction(name: .easeOut)
+            self.knob.animator().frame.origin.x = overshoot
+        }, completionHandler: {
+            NSAnimationContext.runAnimationGroup { ctx in
+                ctx.duration = 0.08
+                ctx.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
+                self.knob.animator().frame.origin.x = targetX
+            }
+        })
+
+        // Animate background color via layer
+        let anim = CABasicAnimation(keyPath: "backgroundColor")
+        anim.duration = 0.18
+        anim.timingFunction = CAMediaTimingFunction(name: .easeOut)
+        layer?.add(anim, forKey: "bg")
         layer?.backgroundColor = isOn ? NSColor.black.cgColor : NSColor(white: 0.78, alpha: 1).cgColor
+
         onToggle?(isOn)
     }
 }
@@ -41,7 +60,23 @@ class CustomSwitch: NSView {
 
 class CustomDockButton: NSView {
     var symbol = ""
-    var isSelected = false
+    var isSelected = false {
+        didSet {
+            if isSelected != oldValue {
+                NSAnimationContext.runAnimationGroup({ ctx in
+                    ctx.duration = 0.06
+                    self.animator().alphaValue = 0.4
+                }, completionHandler: {
+                    self.needsDisplay = true
+                    NSAnimationContext.runAnimationGroup { ctx in
+                        ctx.duration = 0.12
+                        ctx.timingFunction = CAMediaTimingFunction(name: .easeOut)
+                        self.animator().alphaValue = 1.0
+                    }
+                })
+            }
+        }
+    }
     var onTap: ((Int) -> Void)?
     var buttonTag = 0
 
@@ -231,6 +266,7 @@ class CustomStepper: NSView {
         self.minVal = min
         self.maxVal = max
         super.init(frame: NSRect(x: 0, y: 0, width: 16, height: 32))
+        wantsLayer = true
     }
     required init?(coder: NSCoder) { fatalError() }
 
@@ -259,7 +295,20 @@ class CustomStepper: NSView {
 
     override func mouseDown(with event: NSEvent) {
         let pt = convert(event.locationInWindow, from: nil)
-        if pt.y > bounds.height / 2 {
+        let isUp = pt.y > bounds.height / 2
+
+        // Press scale feedback
+        NSAnimationContext.runAnimationGroup({ ctx in
+            ctx.duration = 0.06
+            self.animator().alphaValue = 0.5
+        }, completionHandler: {
+            NSAnimationContext.runAnimationGroup { ctx in
+                ctx.duration = 0.1
+                self.animator().alphaValue = 1.0
+            }
+        })
+
+        if isUp {
             if value < maxVal { value += 1; onChange?(value) }
         } else {
             if value > minVal { value -= 1; onChange?(value) }
@@ -270,34 +319,75 @@ class CustomStepper: NSView {
 // MARK: - Theme Radio Button (16×16, circle outline, filled when selected)
 
 class ThemeRadioButton: NSView {
-    var isSelected: Bool
+    var isSelected: Bool {
+        didSet { animateSelection() }
+    }
     var themeKey: String = ""
     var onSelect: ((String) -> Void)?
+
+    private let fillLayer = CAShapeLayer()
+    private let dotLayer = CAShapeLayer()
+    private let borderLayer = CAShapeLayer()
 
     init(frame: NSRect, isSelected: Bool) {
         self.isSelected = isSelected
         super.init(frame: frame)
+        wantsLayer = true
+        layer?.backgroundColor = NSColor.clear.cgColor
+        setupLayers()
+        updateLayerStates(animated: false)
     }
     required init?(coder: NSCoder) { fatalError() }
 
-    override func draw(_ dirtyRect: NSRect) {
-        guard let ctx = NSGraphicsContext.current?.cgContext else { return }
+    private func setupLayers() {
         let r = bounds.insetBy(dx: 1, dy: 1)
+        let circlePath = CGPath(ellipseIn: r, transform: nil)
+        let innerR = r.insetBy(dx: 4, dy: 4)
+        let innerPath = CGPath(ellipseIn: innerR, transform: nil)
 
-        if isSelected {
-            // Filled dark circle
-            ctx.setFillColor(NSColor.black.cgColor)
-            ctx.fillEllipse(in: r)
-            // White inner dot
-            let inner = r.insetBy(dx: 4, dy: 4)
-            ctx.setFillColor(NSColor.white.cgColor)
-            ctx.fillEllipse(in: inner)
-        } else {
-            // Empty circle with border
-            ctx.setStrokeColor(NSColor(white: 0.7, alpha: 1).cgColor)
-            ctx.setLineWidth(1.5)
-            ctx.strokeEllipse(in: r)
+        // Border ring (unselected state)
+        borderLayer.path = circlePath
+        borderLayer.fillColor = nil
+        borderLayer.strokeColor = NSColor(white: 0.7, alpha: 1).cgColor
+        borderLayer.lineWidth = 1.5
+        layer?.addSublayer(borderLayer)
+
+        // Filled circle (selected state)
+        fillLayer.path = circlePath
+        fillLayer.fillColor = NSColor.black.cgColor
+        layer?.addSublayer(fillLayer)
+
+        // White inner dot (selected state)
+        dotLayer.path = innerPath
+        dotLayer.fillColor = NSColor.white.cgColor
+        layer?.addSublayer(dotLayer)
+    }
+
+    private func updateLayerStates(animated: Bool) {
+        let dur = animated ? 0.18 : 0.0
+
+        if animated {
+            let scaleAnim = CAKeyframeAnimation(keyPath: "transform.scale")
+            scaleAnim.values = [1.0, 0.85, 1.05, 1.0]
+            scaleAnim.keyTimes = [0, 0.3, 0.7, 1.0]
+            scaleAnim.duration = 0.25
+            scaleAnim.timingFunction = CAMediaTimingFunction(name: .easeOut)
+            layer?.add(scaleAnim, forKey: "bounce")
         }
+
+        CATransaction.begin()
+        CATransaction.setAnimationDuration(dur)
+        CATransaction.setAnimationTimingFunction(CAMediaTimingFunction(name: .easeOut))
+
+        fillLayer.opacity = isSelected ? 1.0 : 0.0
+        dotLayer.opacity = isSelected ? 1.0 : 0.0
+        borderLayer.opacity = isSelected ? 0.0 : 1.0
+
+        CATransaction.commit()
+    }
+
+    private func animateSelection() {
+        updateLayerStates(animated: true)
     }
 
     override func mouseDown(with event: NSEvent) {
